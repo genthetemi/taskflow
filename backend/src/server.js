@@ -15,7 +15,7 @@ app.use('/api/tasks', taskRoutes);
 
 // Default route
 app.get('/', (req, res) => {
-  res.send('Welcome to the Task Management API!');
+  res.send('Welcome to the Best Task Management API!');
 });
 
 // Error handling middleware
