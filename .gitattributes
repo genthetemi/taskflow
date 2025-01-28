@@ -1,0 +1,16 @@
+# Enforce LF for specific file types in both frontend and backend
+*.js   text eol=lf
+*.json text eol=lf
+*.md   text eol=lf
+*.html text eol=lf
+*.css  text eol=lf
+
+# Handle text files automatically
+* text=auto
+
+# Forcing LF on specific frontend files too
+frontend/*.txt text eol=lf
+frontend/*.md text eol=lf
+frontend/*.json text eol=lf
+frontend/*.html text eol=lf
+frontend/*.css text eol=lf

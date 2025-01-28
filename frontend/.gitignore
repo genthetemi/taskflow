@@ -1,0 +1,4 @@
+# Ignore frontend build output
+/build/
+
+# Ignore frontend dependencies (node_modules is already covered in the root .gitignore)
