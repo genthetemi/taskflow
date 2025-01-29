@@ -1,7 +1,7 @@
 const pool = require('../config/db');
 
 // Get all tasks
-const getAllTasks = async () => {
+const getAllTasks = async (userId) => {
   try {
     const [rows] = await pool.query('SELECT * FROM tasks');
     return rows;
@@ -11,7 +11,7 @@ const getAllTasks = async () => {
 };
 
 // Create a new task
-const createTask = async (task) => {
+const createTask = async (task, userId) => {
   const { title, description, status } = task;
   if (!title) {
     throw new Error('Title is required');
