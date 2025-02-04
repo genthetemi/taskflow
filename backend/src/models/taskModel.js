@@ -3,27 +3,29 @@ const pool = require('../config/db');
 // Get all tasks
 const getAllTasks = async (userId) => {
   try {
-    const [rows] = await pool.query('SELECT * FROM tasks');
+    const [rows] = await pool.query(
+      'SELECT * FROM tasks WHERE user_id = ?', // Check this query
+      [userId]
+    );
     return rows;
   } catch (error) {
+    console.error("Database error in getAllTasks:", error); // Add logging
     throw new Error('Error fetching tasks');
   }
 };
 
 // Create a new task
+// models/taskModel.js
 const createTask = async (task, userId) => {
   const { title, description, status } = task;
-  if (!title) {
-    throw new Error('Title is required');
-  }
-
   try {
     const [result] = await pool.query(
-      'INSERT INTO tasks (title, description, status) VALUES (?, ?, ?)',
-      [title, description || null, status || 'pending']
+      'INSERT INTO tasks (title, description, status, user_id) VALUES (?, ?, ?, ?)',
+      [title, description || null, status || 'pending', userId]
     );
     return result;
   } catch (error) {
+    console.error("Database error in createTask:", error); // Log the error
     throw new Error('Error creating task');
   }
 };
