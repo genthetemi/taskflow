@@ -1,22 +1,38 @@
-import React from 'react';
-import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
-
-// Importing components/pages
-const Home = () => <h1>Home Page</h1>;
-const About = () => <h1>About Page</h1>;
-const Contact = () => <h1>Contact Page</h1>;
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { AuthProvider } from './context/authContext';
+import PrivateRoute from './components/privateRoute';
+import Login from './pages/login';
+import Dashboard from './pages/dashboard';
+import 'bootstrap/dist/css/bootstrap.min.css';
+import './App.css';
 
 function App() {
   return (
     <Router>
-      <Routes>
-        <Route path="/" element={<Home />} />
-        <Route path="/about" element={<About />} />
-        <Route path="/contact" element={<Contact />} />
-      </Routes>
+      <AuthProvider>
+        <Routes>
+          {/* Only include existing routes */}
+          <Route path="/login" element={<Login />} />
+          <Route
+            path="/dashboard"
+            element={
+              <PrivateRoute>
+                <Dashboard />
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/"
+            element={
+              <PrivateRoute>
+                <Dashboard />
+              </PrivateRoute>
+            }
+          />
+        </Routes>
+      </AuthProvider>
     </Router>
   );
 }
 
 export default App;
-

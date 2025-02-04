@@ -28,7 +28,7 @@ const Dashboard = () => {
             <Card>
               <Card.Body>
                 <h4>Task List</h4>
-                <TaskList tasks={tasks} />
+                <TaskList tasks={tasks}/>
               </Card.Body>
             </Card>
           </Col>

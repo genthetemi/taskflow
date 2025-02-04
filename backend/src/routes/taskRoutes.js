@@ -2,6 +2,7 @@ const { getTasks, addTask, updateTask, deleteTask } = require('../controllers/ta
 const express = require('express');
 const router = express.Router();
 const { authenticate } = require('../middleware/authMiddleware');
+const Task = require('../models/taskModel');
 
 router.use(authenticate);
 
