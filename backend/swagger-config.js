@@ -1,3 +1,36 @@
+const components = {
+  responses: {
+    UnauthorizedError: {
+      description: 'Invalid or missing authentication token',
+      content: {
+        'application/json': {
+          schema: {
+            type: 'object',
+            properties: {
+              error: { type: 'string', example: 'Unauthorized' }
+            }
+          }
+        }
+      }
+    },
+    ValidationError: {
+      description: 'Invalid request body',
+      content: {
+        'application/json': {
+          schema: {
+            type: 'object',
+            properties: {
+              error: { type: 'string', example: 'Title is required' }
+            }
+          }
+        }
+      }
+    }
+  }
+};
+
+
+const { response } = require('express');
 const swaggerJSDoc = require('swagger-jsdoc');
 
 const options = {
