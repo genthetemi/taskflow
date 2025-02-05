@@ -3,6 +3,8 @@ const cors = require('cors');
 const mysql = require('mysql2/promise'); // Use promise-based MySQL
 const taskRoutes = require('./src/routes/taskRoutes'); // Ensure this path is correct
 const authRoutes = require('./src/routes/authRoutes');
+const swaggerUI = require('swagger-ui-express');
+const swaggerSpec = require('./swagger-config');
 
 const app = express();
 
@@ -15,6 +17,15 @@ app.use(cors({
 
 app.use(express.json());
 app.use('/api/auth', authRoutes);
+
+// Documentation endpoint
+app.use('/api-docs', 
+    swaggerUI.serve,
+    swaggerUI.setup(swaggerSpec, {
+      customCss: '.swagger-ui .topbar { display: none }',
+      customSiteTitle: 'TaskFlow API Docs'
+    })
+  );
 
 
 
