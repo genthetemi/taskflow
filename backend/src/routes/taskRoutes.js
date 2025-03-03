@@ -8,11 +8,10 @@ router.use(authenticate);
 
 // Get all tasks
 router.get('/', (req, res) => {
-    Task.getAllTasks(req.userId) // Pass userId to model
-      .then(tasks => res.json(tasks))
-      .catch(error => res.status(500).json({ error }));
-  });
-  
+  Task.getAllTasks(req.userId, req.query.board_id)
+    .then(tasks => res.json(tasks))
+    .catch(error => res.status(500).json({ error }));
+});
 
 // Create a new task
 router.post('/', (req, res) => {

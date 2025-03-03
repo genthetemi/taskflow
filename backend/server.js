@@ -2,6 +2,8 @@ const express = require('express');
 const cors = require('cors');
 const mysql = require('mysql2/promise'); // Use promise-based MySQL
 const taskRoutes = require('./src/routes/taskRoutes'); // Ensure this path is correct
+const boardRoutes = require('./src/routes/boardRoutes');
+
 const authRoutes = require('./src/routes/authRoutes');
 const swaggerUI = require('swagger-ui-express');
 const swaggerSpec = require('./swagger-config');
@@ -17,6 +19,7 @@ app.use(cors({
 
 app.use(express.json());
 app.use('/api/auth', authRoutes);
+app.use('/api/boards', boardRoutes);
 
 // Documentation endpoint
 app.use('/api-docs', 
