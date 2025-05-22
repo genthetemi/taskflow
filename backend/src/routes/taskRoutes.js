@@ -3,6 +3,7 @@ const express = require('express');
 const router = express.Router();
 const { authenticate } = require('../middleware/authMiddleware');
 const Task = require('../models/taskModel');
+const pool = require ('../config/db');
 
 router.use(authenticate);
 
@@ -33,6 +34,29 @@ router.delete('/:id', (req, res) => {
       .then(() => res.status(200).json({ message: 'Task deleted' }))
       .catch(error => res.status(500).json({ error }));
   });
+
+  // Add this route before module.exports
+router.get('/stats', async (req, res) => {
+  try {
+    const [total] = await pool.query(
+      'SELECT COUNT(*) AS total FROM tasks WHERE user_id = ?',
+      [req.userId]
+    );
+    const [completed] = await pool.query(
+      'SELECT COUNT(*) AS completed FROM tasks WHERE user_id = ? AND status = "completed"',
+      [req.userId]
+    );
+    
+    res.json({
+      total: total[0].total,
+      completed: completed[0].completed,
+      inProgress: total[0].total - completed[0].completed,
+      overdue: 0 // Add your overdue logic
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
 
 module.exports = router;
 

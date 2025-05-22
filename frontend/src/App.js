@@ -5,6 +5,7 @@ import Login from './pages/login';
 import Dashboard from './pages/dashboard';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import './App.css';
+import Settings from './pages/settings';
 
 function App() {
   return (
@@ -26,6 +27,14 @@ function App() {
             element={
               <PrivateRoute>
                 <Dashboard />
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/settings"
+            element={
+              <PrivateRoute>
+                <Settings />
               </PrivateRoute>
             }
           />

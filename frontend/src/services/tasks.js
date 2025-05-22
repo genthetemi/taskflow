@@ -1,17 +1,43 @@
 import axios from 'axios';
+import { getAuthHeader, handleUnauthorized } from './auth';
 
-const API_URL = process.env.REACT_APP_API_URL;
+const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
 
-//Add token to headers
-axios.interceptors.request.use((config) => {
-    const token = localStorage.getItem('token');
-    if (token) {
-        config.headers.Authorization = `Bearer ${token}`;
+export const fetchTasks = async (boardId) => {
+  try {
+    if (!boardId) {
+      console.log('No board ID provided');
+      return [];
     }
-    return config;
-});
-
-export const fetchTasks = async () => {
-    const response = await axios.get(`${API_URL}/api/tasks`);
+    
+    console.log('Fetching tasks for board:', boardId);
+    const response = await axios.get(`${API_URL}/api/tasks`, {
+      params: { board_id: boardId },
+      headers: getAuthHeader()
+    });
+    
+    console.log('Tasks received:', response.data);
     return response.data;
+  } catch (error) {
+    console.error('Task fetch error:', error);
+    if (error.response?.status === 401) {
+      handleUnauthorized();
+    }
+    throw error;
+  }
+};
+
+export const createTask = async (taskData) => {
+  try {
+    const response = await axios.post(`${API_URL}/api/tasks`, taskData, {
+      headers: getAuthHeader()
+    });
+    return response.data;
+  } catch (error) {
+    console.error('Error creating task:', error);
+    if (error.response?.status === 401) {
+      handleUnauthorized();
+    }
+    throw error;
+  }
 };

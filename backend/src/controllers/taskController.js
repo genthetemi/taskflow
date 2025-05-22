@@ -3,6 +3,21 @@ const Task = require('../models/taskModel');
 exports.getTasks = async (req, res) => {
   try {
     const boardId = req.query.board_id;
+    
+    if (!boardId) {
+      return res.status(400).json({ error: 'Board ID is required' });
+    }
+
+    // Verify board belongs to user
+    const [board] = await pool.query(
+      'SELECT id FROM boards WHERE id = ? AND user_id = ?',
+      [boardId, req.userId]
+    );
+
+    if (!board.length) {
+      return res.status(404).json({ error: 'Board not found' });
+    }
+
     const tasks = await Task.getAllTasks(req.userId, boardId);
     res.status(200).json(tasks);
   } catch (error) {
