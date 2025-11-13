@@ -1,4 +1,3 @@
-// controllers/boardController.js
 const Board = require('../models/boardModel');
 
 exports.createBoard = async (req, res) => {

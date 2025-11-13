@@ -32,4 +32,33 @@ export const createBoard = async (boardData) => {
     }
     throw error;
   }
+}; 
+
+export const deleteBoard = async (boardId) => {
+  try {
+    await axios.delete(`${API_URL}/api/boards/${boardId}`, {
+      headers: getAuthHeader()
+    });
+  } catch (error) {
+    console.error('Error deleting board:', error);
+    if (error.response?.status === 401) {
+      handleUnauthorized();
+    }
+    throw error;
+  }
+};
+
+export const updateBoard = async (boardId, boardData) => {
+  try {
+    const response = await axios.put(`${API_URL}/api/boards/${boardId}`, boardData, {
+      headers: getAuthHeader()
+    });
+    return response.data;
+  } catch (error) {
+    console.error('Error updating board:', error);
+    if (error.response?.status === 401) {
+      handleUnauthorized();
+    }
+    throw error;
+  }
 };
