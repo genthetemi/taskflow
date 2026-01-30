@@ -26,7 +26,7 @@ const createTask = async (task, userId) => {
   if (!board_id) {
     throw new Error('Board ID is required');
   }
-  
+
   try {
     const [result] = await pool.query(
       `INSERT INTO tasks 
@@ -49,29 +49,30 @@ const createTask = async (task, userId) => {
   }
 };
 
-// Update a task (including board association)
+// Update a task (partial updates supported)
 const updateTask = async (id, task) => {
-  const { title, description, status, priority, due_date, board_id } = task;
   try {
-    const [result] = await pool.query(
-      `UPDATE tasks SET 
-        title = ?, 
-        description = ?, 
-        status = ?, 
-        priority = ?, 
-        due_date = ?,
-        board_id = ?
-       WHERE id = ?`,
-      [
-        title,
-        description,
-        status,
-        priority,
-        due_date || null,
-        board_id,
-        id
-      ]
-    );
+    // Build dynamic SET clause for only provided fields
+    const allowedFields = ['title', 'description', 'status', 'priority', 'due_date', 'board_id'];
+    const setClauses = [];
+    const params = [];
+
+    allowedFields.forEach(field => {
+      if (Object.prototype.hasOwnProperty.call(task, field)) {
+        setClauses.push(`${field} = ?`);
+        const value = task[field] === undefined ? null : task[field];
+        params.push(value);
+      }
+    });
+
+    if (setClauses.length === 0) {
+      throw new Error('No fields provided to update');
+    }
+
+    const query = `UPDATE tasks SET ${setClauses.join(', ')} WHERE id = ?`;
+    params.push(id);
+
+    const [result] = await pool.query(query, params);
 
     if (result.affectedRows === 0) {
       throw new Error('Task not found');

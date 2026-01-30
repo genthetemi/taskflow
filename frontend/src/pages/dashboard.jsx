@@ -19,7 +19,6 @@ const Dashboard = () => {
   const [editingTask, setEditingTask] = useState(null);
   const [showEditBoardModal, setShowEditBoardModal] = useState(false);
   const [editingBoard, setEditingBoard] = useState(null);
-  const [taskFilter, setTaskFilter] = useState('all');
   const [newTask, setNewTask] = useState({
     title: '',
     description: '',
@@ -160,10 +159,8 @@ const Dashboard = () => {
     }
   };
 
-  // Filter tasks based on status
-  const filteredTasks = taskFilter === 'all' 
-    ? tasks 
-    : tasks.filter(task => task.status === taskFilter);
+  // Use all tasks (filtering can be added later if needed)
+  const filteredTasks = tasks;
 
   return (
     <div className="dashboard-wrapper">
@@ -232,12 +229,11 @@ const Dashboard = () => {
               <Card className="task-list-card">
                 <Card.Header className="task-list-header">
                   <h3>{activeBoard.name} Tasks</h3>
-                  <Form.Select 
-                    className="filter-select"
-                    value={taskFilter}
-                    onChange={(e) => setTaskFilter(e.target.value)}
+                  {/* In dashboard.jsx - update the status options */}
+                  <Form.Select
+                    value={editingTask?.status || 'pending'}
+                    onChange={(e) => setEditingTask({...editingTask, status: e.target.value})}
                   >
-                    <option value="all">All Statuses</option>
                     <option value="pending">Pending</option>
                     <option value="in-progress">In Progress</option>
                     <option value="completed">Completed</option>
@@ -341,7 +337,7 @@ const Dashboard = () => {
                 <Form.Group className="mb-3">
                   <Form.Label>Status</Form.Label>
                   <Form.Select
-                    value={editingTask?.status || 'pending'}
+                    value={(editingTask?.status || 'pending').toLowerCase()}
                     onChange={(e) => setEditingTask({...editingTask, status: e.target.value})}
                   >
                     <option value="pending">Pending</option>
@@ -353,7 +349,7 @@ const Dashboard = () => {
                 <Form.Group className="mb-3">
                   <Form.Label>Priority</Form.Label>
                   <Form.Select
-                    value={editingTask?.priority || 'medium'}
+                    value={(editingTask?.priority || 'medium').toLowerCase()}
                     onChange={(e) => setEditingTask({...editingTask, priority: e.target.value})}
                   >
                     <option value="low">Low</option>

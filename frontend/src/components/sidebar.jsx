@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { Form, Button, Modal } from 'react-bootstrap';
+import { FiEdit2, FiTrash2, FiFolder, FiCheckSquare } from 'react-icons/fi';
 
-const Sidebar = ({ boards, activeBoard, onBoardSelect, onCreateBoard }) => {
+const Sidebar = ({ boards, activeBoard, onBoardSelect, onCreateBoard, onEditBoard, onDeleteBoard }) => {
   const [showModal, setShowModal] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
   const [newBoard, setNewBoard] = useState({
@@ -49,9 +50,40 @@ const Sidebar = ({ boards, activeBoard, onBoardSelect, onCreateBoard }) => {
             key={board.id}
             className={`board-item ${activeBoard?.id === board.id ? 'active' : ''}`}
             onClick={() => onBoardSelect(board)}
+            role="button"
+            tabIndex={0}
           >
-            <span className="board-name">{board.name}</span>
-            <span className="task-count">{board.task_count || 0}</span>
+            <span className="board-name">
+              <FiFolder />
+              {board.name}
+            </span>
+            <div className="board-info">
+              <span className="task-count">
+                <FiCheckSquare /> {board.task_count || 0}
+              </span>
+              <div className="board-actions">
+                <button
+                  className="btn btn-sm btn-outline-warning board-action-btn"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onEditBoard(board);
+                  }}
+                  title="Edit board"
+                >
+                  <FiEdit2 />
+                </button>
+                <button
+                  className="btn btn-sm btn-outline-danger board-action-btn"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onDeleteBoard(board.id);
+                  }}
+                  title="Delete board"
+                >
+                  <FiTrash2 />
+                </button>
+              </div>
+            </div>
           </div>
         ))}
       </div>
