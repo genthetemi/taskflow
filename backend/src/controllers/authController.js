@@ -5,7 +5,18 @@ const { secret, expiresIn } = require('../config/jwt');
 
 exports.register = async (req, res) => {
     try {
-        const { email, password } = req.body;
+        const { email, password, first_name, last_name } = req.body;
+
+        // Basic validation
+        if (!first_name || !first_name.trim() || !last_name || !last_name.trim()) {
+            return res.status(400).json({ error: 'First and last name are required' });
+        }
+        if (!email || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) {
+            return res.status(400).json({ error: 'Valid email is required' });
+        }
+        if (!password || password.length < 8) {
+            return res.status(400).json({ error: 'Password must be at least 8 characters' });
+        }
 
         // Check if user already exists
         const existingUser = await User.findUserByEmail(email);
@@ -13,12 +24,22 @@ exports.register = async (req, res) => {
             return res.status(400).json({ error: 'Email already in use' });
         }
 
-        await User.createUser(req.body);
-        res.status(201).json({ message: 'User registered successfully' });
+        const result = await User.createUser({ email, password, first_name: first_name.trim(), last_name: last_name.trim() });
+
+        // Return created user info (without password)
+        const createdUser = {
+            id: result.insertId,
+            email,
+            first_name: first_name.trim(),
+            last_name: last_name.trim()
+        };
+
+        res.status(201).json({ message: 'User registered successfully', user: createdUser });
 
     } catch (error) {
         console.error('Registration Error:', error);
-        res.status(500).json({ error: 'Internal Server Error' });
+        const details = error.code || error.sqlMessage || error.message;
+        res.status(500).json({ error: 'Internal Server Error', details });
     }
 };
 

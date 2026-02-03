@@ -251,28 +251,44 @@
 
 /* Auth (Login/Register) */
 .auth-card {
-  max-width: 540px;
+  max-width: 680px; /* slightly wider for modern forms */
   margin: 0 auto;
+  padding: 1.25rem;
 }
 
 .auth-card .hero-title {
-  font-size: 2rem;
-  margin-bottom: 0.75rem;
+  font-size: 1.75rem;
+  margin-bottom: 0.5rem;
 }
 
 .auth-card .hero-subtitle {
-  margin-bottom: 1.25rem;
+  margin-bottom: 1rem;
+  color: #6b7280;
 }
 
 .auth-form .form-control {
   border-radius: 10px;
   padding: 0.75rem 0.9rem;
+  box-shadow: none;
+}
+
+.password-hint {
+  font-size: 0.8rem;
+  color: #6b7280;
+}
+
+.password-match .text-success {
+  font-weight: 600;
 }
 
 .auth-card .btn {
-  padding: 0.65rem 1rem;
+  padding: 0.75rem 1rem;
   border-radius: 8px;
   font-weight: 700;
+}
+
+@media (max-width: 992px) {
+  .auth-card { max-width: 100%; padding: 1rem; }
 }
 
 @media (max-width: 992px) {

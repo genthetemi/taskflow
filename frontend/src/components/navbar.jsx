@@ -46,8 +46,8 @@ const Navbar = () => {
                 <Link className="btn btn-outline-primary me-2" to="/login">
                   Login
                 </Link>
-                <Link className="btn btn-primary" to="/dashboard">
-                  Get Started
+                <Link className="btn btn-primary" to="/register">
+                  Register
                 </Link>
               </>
             )}

@@ -58,33 +58,47 @@ const Dashboard = () => {
   }, [activeBoard]);
 
   // Board handlers
-  const handleCreateBoard = async (boardName) => {
+  const handleCreateBoard = async (boardInput) => {
     try {
-      const newBoard = await createBoard({
-        name: boardName,
-        description: `Board for ${boardName} tasks`
-      });
+      // Support both string and object input from Sidebar
+      let payload;
+      if (typeof boardInput === 'string') {
+        payload = {
+          name: boardInput,
+          description: `Board for ${boardInput} tasks`
+        };
+      } else {
+        const name = boardInput?.name?.trim();
+        const description = boardInput?.description?.trim() || `Board for ${name} tasks`;
+        if (!name) {
+          setError('Board name is required');
+          return;
+        }
+        payload = { name, description };
+      }
+
+      const newBoard = await createBoard(payload);
       const updatedBoards = await fetchBoards();
       setBoards(updatedBoards);
       setActiveBoard(newBoard);
     } catch (err) {
-      setError('Failed to create board');
+      setError(err.message || 'Failed to create board');
     }
   };
 
   const handleUpdateBoard = async (e) => {
     e.preventDefault();
     try {
-      await updateBoard(editingBoard.id, editingBoard);
+      const updated = await updateBoard(editingBoard.id, editingBoard);
       const updatedBoards = await fetchBoards();
       setBoards(updatedBoards);
-      setActiveBoard(prev => 
-        prev.id === editingBoard.id ? editingBoard : prev
-      );
+      // Use the server's returned board to avoid stale/partial state
+      setActiveBoard(updated || updatedBoards.find(b => b.id === editingBoard.id));
       setShowEditBoardModal(false);
       setEditingBoard(null);
     } catch (err) {
-      setError('Failed to update board');
+      // Show server-provided message when available
+      setError(err.message || 'Failed to update board');
     }
   };
 

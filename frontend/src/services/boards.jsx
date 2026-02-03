@@ -26,11 +26,13 @@ export const createBoard = async (boardData) => {
     });
     return response.data;
   } catch (error) {
-    console.error('Error creating board:', error);
+    console.error('Error creating board:', error, error.response?.data);
     if (error.response?.status === 401) {
       handleUnauthorized();
     }
-    throw error;
+    const serverMsg = error.response?.data?.error || error.message || 'Error creating board';
+    // Propagate a meaningful error message to the UI
+    throw new Error(serverMsg);
   }
 }; 
 

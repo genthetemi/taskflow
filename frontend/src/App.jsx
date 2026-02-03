@@ -2,6 +2,7 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { AuthProvider } from './context/authContext';
 import PrivateRoute from './components/privateRoute';
 import Login from './pages/login';
+import Register from './pages/register';
 import Dashboard from './pages/dashboard';
 import Settings from './pages/settings';
 import Home from './pages/home';
@@ -20,6 +21,7 @@ function App() {
           <Route path="/about" element={<About />} />
           <Route path="/features" element={<Features />} />
           <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
           
           {/* Protected Routes */}
           <Route
