@@ -25,6 +25,23 @@ const Dashboard = () => {
     status: 'pending',
     priority: 'medium'
   });
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+
+  const toggleSidebar = () => setIsSidebarOpen(v => !v);
+
+  // Toggle task status helper: pending -> in-progress -> completed -> pending
+  const handleToggleStatus = async (task) => {
+    try {
+      const order = ['pending', 'in-progress', 'completed'];
+      const idx = order.indexOf((task.status || 'pending').toLowerCase());
+      const next = order[(idx + 1) % order.length];
+      await updateTask(task.id, { ...task, status: next, board_id: activeBoard?.id });
+      const updatedTasks = await fetchTasks(activeBoard.id);
+      setTasks(updatedTasks);
+    } catch (err) {
+      setError('Failed to update task status');
+    }
+  };
 
   // Load boards on mount
   useEffect(() => {
@@ -188,10 +205,12 @@ const Dashboard = () => {
           setShowEditBoardModal(true);
         }}
         onDeleteBoard={handleDeleteBoard}
+        isOpen={isSidebarOpen}
+        onClose={() => setIsSidebarOpen(false)}
       />
       
       <div className="dashboard-content">
-        <Navbar />
+        <Navbar onSidebarToggle={toggleSidebar} />
         
         <Container fluid className="dashboard-container">
           <div className="dashboard-header">
@@ -258,6 +277,7 @@ const Dashboard = () => {
                     tasks={filteredTasks}
                     onEditTask={handleEditTask}
                     onDeleteTask={handleDeleteTask}
+                    onToggleStatus={handleToggleStatus}
                   />
                 </Card.Body>
               </Card>

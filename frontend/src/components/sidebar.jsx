@@ -2,13 +2,16 @@ import { useState } from 'react';
 import { Form, Button, Modal } from 'react-bootstrap';
 import { FiEdit2, FiTrash2, FiFolder, FiCheckSquare } from 'react-icons/fi';
 
-const Sidebar = ({ boards, activeBoard, onBoardSelect, onCreateBoard, onEditBoard, onDeleteBoard }) => {
+const Sidebar = ({ boards, activeBoard, onBoardSelect, onCreateBoard, onEditBoard, onDeleteBoard, isOpen = true, onClose }) => {
   const [showModal, setShowModal] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
   const [newBoard, setNewBoard] = useState({
     name: '',
     description: ''
   });
+
+  // Do not render sidebar on small screens when closed
+  const mobileHidden = typeof isOpen === 'boolean' && !isOpen;
 
   const handleCreateClick = () => {
     setShowModal(true);
@@ -38,11 +41,16 @@ const Sidebar = ({ boards, activeBoard, onBoardSelect, onCreateBoard, onEditBoar
   };
 
   return (
-    <aside className="sidebar-wrapper">
-      <div className="sidebar-header">
-        <h2 className="logo">TaskFlow</h2>
-        <p className="text-muted">Workspace</p>
-      </div>
+    <>
+      <div className={`sidebar-overlay ${isOpen ? 'visible' : ''}`} onClick={() => onClose && onClose()}></div>
+      <aside className={`sidebar-wrapper ${mobileHidden ? 'collapsed' : ''}`} aria-hidden={mobileHidden}>
+        <div className="d-flex justify-content-between align-items-start">
+          <div>
+            <h2 className="logo">TaskFlow</h2>
+            <p className="text-muted">Workspace</p>
+          </div>
+          <button className="btn btn-sm btn-outline-secondary d-lg-none" onClick={() => onClose && onClose()} aria-label="Close sidebar">✕</button>
+        </div>
 
       <div className="boards-list">
         {boards.map(board => (
@@ -148,6 +156,7 @@ const Sidebar = ({ boards, activeBoard, onBoardSelect, onCreateBoard, onEditBoar
         </Modal.Body>
       </Modal>
     </aside>
+    </>
   );
 };
 

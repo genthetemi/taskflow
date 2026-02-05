@@ -598,4 +598,34 @@
     max-height: auto;
     margin-bottom: 1rem;
   }
+
+  /* Sidebar collapse when closed on mobile */
+  .sidebar-wrapper.collapsed {
+    display: none;
+  }
+
+  .sidebar-overlay {
+    display: none;
+  }
+
+  .sidebar-overlay.visible {
+    display: block;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.45);
+    z-index: 900;
+  }
+
+  /* Task status badge clickable */
+  .status-badge {
+    border: none;
+    cursor: pointer;
+    padding: 0.4rem 0.75rem;
+    border-radius: 0.5rem;
+    font-weight: 600;
+  }
+
+  .status-badge.pending { background: #6c757d; color: white; }
+  .status-badge.in-progress { background: #f59e0b; color: white; }
+  .status-badge.completed { background: #198754; color: white; }
 }

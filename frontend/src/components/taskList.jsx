@@ -82,9 +82,13 @@ const TaskList = ({ tasks, loading, error, onEditTask, onDeleteTask }) => {
           )}
 
           <div className="task-footer">
-            <Badge bg={task.status === 'completed' ? 'success' : task.status === 'in-progress' ? 'warning' : 'secondary'}>
+            <button
+              className={`badge status-badge ${task.status}`}
+              onClick={() => typeof onToggleStatus === 'function' && onToggleStatus(task)}
+              title="Change status"
+            >
               {getStatusLabel(task.status)}
-            </Badge>
+            </button>
             <Badge 
               style={{ 
                 backgroundColor: getPriorityColor(task.priority),
