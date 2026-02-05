@@ -1,13 +1,17 @@
 import { useState } from 'react';
 import { Form, Button, Modal } from 'react-bootstrap';
+import { FiEdit2, FiTrash2, FiFolder, FiCheckSquare } from 'react-icons/fi';
 
-const Sidebar = ({ boards, activeBoard, onBoardSelect, onCreateBoard }) => {
+const Sidebar = ({ boards, activeBoard, onBoardSelect, onCreateBoard, onEditBoard, onDeleteBoard, isOpen = true, onClose }) => {
   const [showModal, setShowModal] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
   const [newBoard, setNewBoard] = useState({
     name: '',
     description: ''
   });
+
+  // Do not render sidebar on small screens when closed
+  const mobileHidden = typeof isOpen === 'boolean' && !isOpen;
 
   const handleCreateClick = () => {
     setShowModal(true);
@@ -37,11 +41,16 @@ const Sidebar = ({ boards, activeBoard, onBoardSelect, onCreateBoard }) => {
   };
 
   return (
-    <aside className="sidebar-wrapper">
-      <div className="sidebar-header">
-        <h2 className="logo">TaskFlow</h2>
-        <p className="text-muted">Workspace</p>
-      </div>
+    <>
+      <div className={`sidebar-overlay ${isOpen ? 'visible' : ''}`} onClick={() => onClose && onClose()}></div>
+      <aside className={`sidebar-wrapper ${mobileHidden ? 'collapsed' : ''}`} aria-hidden={mobileHidden}>
+        <div className="d-flex justify-content-between align-items-start">
+          <div>
+            <h2 className="logo">TaskFlow</h2>
+            <p className="text-muted">Workspace</p>
+          </div>
+          <button className="btn btn-sm btn-outline-secondary d-lg-none" onClick={() => onClose && onClose()} aria-label="Close sidebar">✕</button>
+        </div>
 
       <div className="boards-list">
         {boards.map(board => (
@@ -49,9 +58,40 @@ const Sidebar = ({ boards, activeBoard, onBoardSelect, onCreateBoard }) => {
             key={board.id}
             className={`board-item ${activeBoard?.id === board.id ? 'active' : ''}`}
             onClick={() => onBoardSelect(board)}
+            role="button"
+            tabIndex={0}
           >
-            <span className="board-name">{board.name}</span>
-            <span className="task-count">{board.task_count || 0}</span>
+            <span className="board-name">
+              <FiFolder />
+              {board.name}
+            </span>
+            <div className="board-info">
+              <span className="task-count">
+                <FiCheckSquare /> {board.task_count || 0}
+              </span>
+              <div className="board-actions">
+                <button
+                  className="btn btn-sm btn-outline-warning board-action-btn"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onEditBoard(board);
+                  }}
+                  title="Edit board"
+                >
+                  <FiEdit2 />
+                </button>
+                <button
+                  className="btn btn-sm btn-outline-danger board-action-btn"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onDeleteBoard(board.id);
+                  }}
+                  title="Delete board"
+                >
+                  <FiTrash2 />
+                </button>
+              </div>
+            </div>
           </div>
         ))}
       </div>
@@ -116,6 +156,7 @@ const Sidebar = ({ boards, activeBoard, onBoardSelect, onCreateBoard }) => {
         </Modal.Body>
       </Modal>
     </aside>
+    </>
   );
 };
 

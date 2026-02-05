@@ -41,3 +41,32 @@ export const createTask = async (taskData) => {
     throw error;
   }
 };
+
+export const deleteTask = async (taskId) => {
+  try {
+    await axios.delete(`${API_URL}/api/tasks/${taskId}`, {
+      headers: getAuthHeader()
+    });
+  } catch (error) {
+    console.error('Error deleting task:', error);
+    if (error.response?.status === 401) {
+      handleUnauthorized();
+    }
+    throw error;
+  }
+};
+
+export const updateTask = async (taskId, taskData) => {
+  try {
+    const response = await axios.put(`${API_URL}/api/tasks/${taskId}`, taskData, {
+      headers: getAuthHeader()
+    });
+    return response.data;
+  } catch (error) {
+    console.error('Error updating task:', error);
+    if (error.response?.status === 401) {
+      handleUnauthorized();
+    }
+    throw error;
+  }
+};

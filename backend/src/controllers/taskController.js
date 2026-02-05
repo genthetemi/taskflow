@@ -1,4 +1,5 @@
 const Task = require('../models/taskModel');
+const pool = require('../config/db'); // Add this import
 
 exports.getTasks = async (req, res) => {
   try {
@@ -28,8 +29,8 @@ exports.getTasks = async (req, res) => {
 
 exports.addTask = async (req, res) => {
   try {
-     // Validate required fields
-     if (!req.body.title || !req.body.board_id) {
+    // Validate required fields
+    if (!req.body.title || !req.body.board_id) {
       return res.status(400).json({ 
         error: 'Title and Board ID are required' 
       });
@@ -45,6 +46,40 @@ exports.addTask = async (req, res) => {
       return res.status(404).json({ 
         error: 'Board not found or unauthorized' 
       });
+    }
+
+    // Validate and normalize status if provided
+    if (req.body.status) {
+      const raw = String(req.body.status).toLowerCase().trim().replace(/\s+/g, '-');
+      console.log('Status mapping - raw input:', raw);
+      const statusMap = {
+        'pending': 'Pending',
+        'in-progress': 'In Progress',
+        'inprogress': 'In Progress',
+        'completed': 'Completed',
+        'complete': 'Completed'
+      };
+      req.body.status = statusMap[raw];
+      console.log('Status mapping - result:', req.body.status);
+      if (!req.body.status) {
+        return res.status(400).json({ error: 'Invalid status value. Use: pending, in-progress, or completed' });
+      }
+    }
+
+    // Validate and normalize priority if provided
+    if (req.body.priority) {
+      const raw = String(req.body.priority).toLowerCase().trim();
+      console.log('Priority mapping - raw input:', raw);
+      const priorityMap = {
+        'low': 'Low',
+        'medium': 'Medium',
+        'high': 'High'
+      };
+      req.body.priority = priorityMap[raw];
+      console.log('Priority mapping - result:', req.body.priority);
+      if (!req.body.priority) {
+        return res.status(400).json({ error: 'Invalid priority value. Use: low, medium, or high' });
+      }
     }
 
     const newTask = await Task.createTask(req.body, req.userId);
@@ -75,9 +110,44 @@ exports.updateTask = async (req, res) => {
       return res.status(403).json({ error: 'Unauthorized' });
     }
 
+    // Validate and normalize status if provided
+    if (req.body.status) {
+      const raw = String(req.body.status).toLowerCase().trim().replace(/\s+/g, '-');
+      console.log('Status mapping - raw input:', raw);
+      const statusMap = {
+        'pending': 'Pending',
+        'in-progress': 'In Progress',
+        'inprogress': 'In Progress',
+        'completed': 'Completed',
+        'complete': 'Completed'
+      };
+      req.body.status = statusMap[raw];
+      console.log('Status mapping - result:', req.body.status);
+      if (!req.body.status) {
+        return res.status(400).json({ error: 'Invalid status value. Use: pending, in-progress, or completed' });
+      }
+    }
+
+    // Validate and normalize priority if provided
+    if (req.body.priority) {
+      const raw = String(req.body.priority).toLowerCase().trim();
+      console.log('Priority mapping - raw input:', raw);
+      const priorityMap = {
+        'low': 'Low',
+        'medium': 'Medium',
+        'high': 'High'
+      };
+      req.body.priority = priorityMap[raw];
+      console.log('Priority mapping - result:', req.body.priority);
+      if (!req.body.priority) {
+        return res.status(400).json({ error: 'Invalid priority value. Use: low, medium, or high' });
+      }
+    }
+
     await Task.updateTask(req.params.id, req.body);
     res.status(200).json({ message: 'Task updated' });
   } catch (error) {
+    console.error("Error updating task:", error.message);
     res.status(500).json({ error: error.message });
   }
 };
@@ -101,6 +171,7 @@ exports.deleteTask = async (req, res) => {
     await Task.deleteTask(req.params.id);
     res.status(200).json({ message: 'Task deleted' });
   } catch (error) {
+    console.error("Error deleting task:", error.message);
     res.status(500).json({ error: error.message });
   }
 };

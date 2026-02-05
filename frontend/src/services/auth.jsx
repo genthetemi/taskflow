@@ -41,6 +41,23 @@ export const handleUnauthorized = () => {
   window.location.href = '/login';
 };
 
+export const register = async ({ firstName, lastName, email, password }) => {
+  try {
+    const payload = {
+      first_name: firstName,
+      last_name: lastName,
+      email,
+      password
+    };
+    const response = await axios.post(`${API_URL}/api/auth/register`, payload);
+    return response.data;
+  } catch (error) {
+    console.error('Register request failed:', error, error.response?.data);
+    const serverMsg = error.response?.data?.error || error.response?.data?.details || error.message || 'Registration failed';
+    throw new Error(serverMsg);
+  }
+};
+
 export const checkAuthState = () => {
   const token = localStorage.getItem('token');
   const userStr = localStorage.getItem('user');
