@@ -49,9 +49,16 @@ const Navbar = ({ onSidebarToggle }) => {
             <li className="nav-item">
               <Link className="nav-link" to="/about" onClick={() => setOpen(false)}>ABOUT</Link>
             </li>
-            <li className="nav-item">
-              <Link className="nav-link" to="/dashboard" onClick={() => setOpen(false)}>DASHBOARD</Link>
-            </li>
+            {user?.role !== 'admin' && (
+              <li className="nav-item">
+                <Link className="nav-link" to="/dashboard" onClick={() => setOpen(false)}>DASHBOARD</Link>
+              </li>
+            )}
+            {user?.role === 'admin' && (
+              <li className="nav-item">
+                <Link className="nav-link" to="/admin" onClick={() => setOpen(false)}>ADMIN</Link>
+              </li>
+            )}
           </ul>
 
           <div className="d-flex">

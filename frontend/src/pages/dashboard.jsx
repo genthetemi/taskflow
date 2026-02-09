@@ -1,4 +1,6 @@
 import { useEffect, useState } from 'react';
+import { Navigate } from 'react-router-dom';
+import { useAuth } from '../context/authContext';
 import { Container, Row, Col, Card, Alert, Modal, Form, Button } from 'react-bootstrap';
 import Navbar from '../components/navbar';
 import TaskList from '../components/taskList';
@@ -9,6 +11,7 @@ import { fetchBoards, createBoard, updateBoard, deleteBoard } from '../services/
 import '../styles/dashboard.css';
 
 const Dashboard = () => {
+  const { user } = useAuth();
   // State declarations
   const [tasks, setTasks] = useState([]);
   const [boards, setBoards] = useState([]);
@@ -208,6 +211,10 @@ const Dashboard = () => {
       setError('Failed to move task');
     }
   };
+
+  if (user?.role === 'admin') {
+    return <Navigate to="/admin" replace />;
+  }
 
   return (
     <div className={`dashboard-wrapper ${isSidebarOpen ? 'sidebar-open' : ''}`}>

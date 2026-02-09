@@ -1,6 +1,7 @@
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcrypt'); // Fixed incorrect "bycrypt" typo
 const User = require('../models/userModel');
+const Admin = require('../models/adminModel');
 const { secret, expiresIn } = require('../config/jwt');
 
 exports.register = async (req, res) => {
@@ -54,17 +55,96 @@ exports.login = async (req, res) => {
             return res.status(401).json({ error: 'Invalid Credentials' });
         }
 
+        if (user.status === 'disabled') {
+            return res.status(403).json({ error: 'Account disabled' });
+        }
+
+        if (user.lock_until && new Date(user.lock_until) > new Date()) {
+            return res.status(423).json({ error: 'Account locked. Try again later.' });
+        }
+
         // 🔍 Compare entered password with hashed password
         const isMatch = await bcrypt.compare(password, user.password);
         if (!isMatch) {
             console.log('Incorrect password for user:', email);
+            const settings = await Admin.getSettings();
+            const security = settings.security || { lockAfterFailed: 5, lockMinutes: 15 };
+            const failedCount = (user.failed_login_count || 0) + 1;
+            const shouldLock = failedCount >= Number(security.lockAfterFailed || 5);
+            const lockUntil = shouldLock
+                ? new Date(Date.now() + Number(security.lockMinutes || 15) * 60 * 1000)
+                : null;
+
+            await User.updateUserFields(user.id, {
+                failed_login_count: failedCount,
+                lock_until: lockUntil ? lockUntil.toISOString().slice(0, 19).replace('T', ' ') : null
+            });
+
             return res.status(401).json({ error: 'Invalid Credentials' });
         }
 
-        // 🔥 Generate JWT token
-        const token = jwt.sign({ id: user.id }, secret, { expiresIn });
+        if (user.role === 'admin') {
+            const rules = await Admin.getIpRulesForCheck();
+            const clientIp = req.ip;
+            const allowList = rules.filter(rule => rule.rule_type === 'allow').map(rule => rule.ip);
+            const denyList = rules.filter(rule => rule.rule_type === 'deny').map(rule => rule.ip);
 
-        res.json({ message: 'Login successful', token, user: { id: user.id, email: user.email } });
+            if (denyList.includes(clientIp)) {
+                return res.status(403).json({ error: 'Access denied from this IP' });
+            }
+
+            if (allowList.length && !allowList.includes(clientIp)) {
+                return res.status(403).json({ error: 'Access restricted to allow-listed IPs' });
+            }
+        }
+
+        const userAgent = req.headers['user-agent'] || null;
+        const isNewLogin = user.last_login_ip && user.last_login_ip !== req.ip;
+        const isNewDevice = user.last_login_user_agent && user.last_login_user_agent !== userAgent;
+
+        if (isNewLogin || isNewDevice) {
+            await Admin.addAuditLog({
+                actorUserId: user.id,
+                action: 'login_alert',
+                details: { ip: req.ip, userAgent },
+                ip: req.ip,
+                userAgent
+            });
+        }
+
+        await Admin.addAuditLog({
+            actorUserId: user.id,
+            action: 'login',
+            details: { ip: req.ip },
+            ip: req.ip,
+            userAgent
+        });
+
+        await User.updateUserFields(user.id, {
+            failed_login_count: 0,
+            lock_until: null,
+            last_login_ip: req.ip,
+            last_login_user_agent: userAgent,
+            last_login_at: new Date().toISOString().slice(0, 19).replace('T', ' ')
+        });
+
+        // 🔥 Generate JWT token
+        const token = jwt.sign(
+            { id: user.id, role: user.role || 'user', session_version: user.session_version || 0 },
+            secret,
+            { expiresIn }
+        );
+
+        res.json({
+            message: 'Login successful',
+            token,
+            user: {
+                id: user.id,
+                email: user.email,
+                role: user.role || 'user',
+                force_password_reset: !!user.force_password_reset
+            }
+        });
 
     } catch (error) {
         console.error('Login Error:', error);

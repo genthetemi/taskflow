@@ -3,23 +3,26 @@ const cors = require('cors');
 const mysql = require('mysql2/promise'); // Use promise-based MySQL
 const taskRoutes = require('./src/routes/taskRoutes'); // Ensure this path is correct
 const boardRoutes = require('./src/routes/boardRoutes');
+const adminRoutes = require('./src/routes/adminRoutes');
 
 const authRoutes = require('./src/routes/authRoutes');
 const swaggerUI = require('swagger-ui-express');
 const swaggerSpec = require('./swagger-config');
+const { setupDatabase } = require('./src/utils/dbSetup');
 
 const app = express();
 
 // CORS Middleware (Allows requests from frontend)
 app.use(cors({
     origin: 'http://localhost:3000', // Change this to your frontend's domain
-    methods: ['GET', 'POST', 'PUT', 'DELETE'],
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
     allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
 app.use(express.json());
 app.use('/api/auth', authRoutes);
 app.use('/api/boards', boardRoutes);
+app.use('/api/admin', adminRoutes);
 
 // Documentation endpoint
 app.use('/api-docs', 
@@ -70,6 +73,16 @@ app.use((err, req, res, next) => {
 
 // Start Server
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
-    console.log(`Server running on http://localhost:${PORT}`);
-});
+
+(async () => {
+    try {
+        await setupDatabase();
+        console.log('Database setup completed');
+    } catch (error) {
+        console.error('Database setup failed:', error.message);
+    }
+
+    app.listen(PORT, () => {
+        console.log(`Server running on http://localhost:${PORT}`);
+    });
+})();
