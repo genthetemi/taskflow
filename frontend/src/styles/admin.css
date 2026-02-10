@@ -132,6 +132,94 @@
   opacity: 0.7;
 }
 
+.admin-user-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1.5rem;
+}
+
+.admin-user-card {
+  background: #ffffff;
+  border: var(--admin-border);
+  padding: 1.25rem;
+  box-shadow: var(--admin-shadow);
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.admin-user-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+}
+
+.admin-user-badges {
+  display: flex;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+}
+
+.admin-pill {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-weight: 800;
+  padding: 0.25rem 0.5rem;
+  border: var(--admin-border);
+  background: #ffffff;
+}
+
+.admin-pill.admin {
+  background: #111111;
+  color: #ffffff;
+}
+
+.admin-pill.active {
+  border-color: #0f5132;
+  color: #0f5132;
+  background: #e7f9ed;
+}
+
+.admin-pill.disabled {
+  border-color: #8b1e1e;
+  color: #8b1e1e;
+  background: #ffe9e7;
+}
+
+.admin-user-controls {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 1rem;
+}
+
+.admin-control-block {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.admin-control-label {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  font-weight: 800;
+  color: #6b7280;
+}
+
+.admin-segment {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.admin-user-actions {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
 .admin-inline {
   display: flex;
   gap: 0.5rem;
@@ -182,6 +270,56 @@
   background: #ffffff;
 }
 
+.admin-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+  z-index: 1050;
+}
+
+.admin-modal-card {
+  background: #ffffff;
+  border: var(--admin-border);
+  box-shadow: var(--admin-shadow);
+  padding: 1.5rem;
+  width: min(640px, 100%);
+}
+
+.admin-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.admin-modal-header h2 {
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.admin-modal-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.admin-field-full {
+  grid-column: 1 / -1;
+}
+
+.admin-modal-actions {
+  margin-top: 1.25rem;
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+}
+
 .admin-log-meta {
   font-size: 0.8rem;
   opacity: 0.7;
@@ -210,5 +348,9 @@
   .admin-log-list li {
     flex-direction: column;
     align-items: flex-start;
+  }
+
+  .admin-modal-grid {
+    grid-template-columns: 1fr;
   }
 }

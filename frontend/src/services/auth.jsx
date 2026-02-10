@@ -58,6 +58,7 @@ export const register = async ({ firstName, lastName, email, password }) => {
   }
 };
 
+
 export const checkAuthState = () => {
   const token = localStorage.getItem('token');
   const userStr = localStorage.getItem('user');

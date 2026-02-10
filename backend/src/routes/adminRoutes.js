@@ -4,9 +4,10 @@ const { authenticate } = require('../middleware/authMiddleware');
 const { requireAdmin } = require('../middleware/adminMiddleware');
 const {
   listUsers,
+  updateUserDetails,
   updateUserRole,
   updateUserStatus,
-  forcePasswordReset,
+  deleteUser,
   revokeSessions,
   getAuditLogs,
   getSettings,
@@ -19,9 +20,10 @@ const {
 router.use(authenticate, requireAdmin);
 
 router.get('/users', listUsers);
+router.patch('/users/:id', updateUserDetails);
 router.patch('/users/:id/role', updateUserRole);
 router.patch('/users/:id/status', updateUserStatus);
-router.post('/users/:id/force-password-reset', forcePasswordReset);
+router.delete('/users/:id', deleteUser);
 router.post('/users/:id/revoke-sessions', revokeSessions);
 
 router.get('/audit-logs', getAuditLogs);

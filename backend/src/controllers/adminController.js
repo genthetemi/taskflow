@@ -9,6 +9,69 @@ const listUsers = async (req, res) => {
   }
 };
 
+const updateUserDetails = async (req, res) => {
+  try {
+    const { first_name, last_name, email, role, status } = req.body || {};
+    const updates = {};
+
+    if (first_name !== undefined) {
+      if (!first_name || !String(first_name).trim()) {
+        return res.status(400).json({ error: 'First name is required' });
+      }
+      updates.first_name = String(first_name).trim();
+    }
+
+    if (last_name !== undefined) {
+      if (!last_name || !String(last_name).trim()) {
+        return res.status(400).json({ error: 'Last name is required' });
+      }
+      updates.last_name = String(last_name).trim();
+    }
+
+    if (email !== undefined) {
+      const emailStr = String(email).trim();
+      if (!emailStr || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(emailStr)) {
+        return res.status(400).json({ error: 'Valid email is required' });
+      }
+      updates.email = emailStr;
+    }
+
+    if (role !== undefined) {
+      if (!['user', 'admin'].includes(role)) {
+        return res.status(400).json({ error: 'Invalid role' });
+      }
+      updates.role = role;
+    }
+
+    if (status !== undefined) {
+      if (!['active', 'disabled'].includes(status)) {
+        return res.status(400).json({ error: 'Invalid status' });
+      }
+      updates.status = status;
+    }
+
+    if (!Object.keys(updates).length) {
+      return res.status(400).json({ error: 'No valid fields provided' });
+    }
+
+    await Admin.updateUser(req.params.id, updates);
+    await Admin.addAuditLog({
+      actorUserId: req.userId,
+      action: 'user_update',
+      details: { userId: req.params.id, updates },
+      ip: req.ip,
+      userAgent: req.headers['user-agent']
+    });
+
+    res.json({ message: 'User updated' });
+  } catch (error) {
+    if (error.code === 'MISSING_COLUMNS') {
+      return res.status(400).json({ error: error.message });
+    }
+    res.status(500).json({ error: 'Failed to update user' });
+  }
+};
+
 const updateUserRole = async (req, res) => {
   try {
     const { role } = req.body;
@@ -59,20 +122,32 @@ const updateUserStatus = async (req, res) => {
   }
 };
 
-const forcePasswordReset = async (req, res) => {
+const deleteUser = async (req, res) => {
   try {
-    await Admin.updateUser(req.params.id, { force_password_reset: 1 });
+    const targetId = Number(req.params.id);
+    if (!targetId) {
+      return res.status(400).json({ error: 'Invalid user id' });
+    }
+
+    if (Number(req.userId) === targetId) {
+      return res.status(400).json({ error: 'You cannot delete your own account' });
+    }
+
+    await Admin.deleteUser(targetId);
     await Admin.addAuditLog({
       actorUserId: req.userId,
-      action: 'force_password_reset',
-      details: { userId: req.params.id },
+      action: 'user_delete',
+      details: { userId: targetId },
       ip: req.ip,
       userAgent: req.headers['user-agent']
     });
 
-    res.json({ message: 'Password reset required on next login' });
+    res.json({ message: 'User deleted' });
   } catch (error) {
-    res.status(500).json({ error: 'Failed to force password reset' });
+    if (error.code === 'NOT_FOUND') {
+      return res.status(404).json({ error: 'User not found' });
+    }
+    res.status(500).json({ error: 'Failed to delete user' });
   }
 };
 
@@ -193,9 +268,10 @@ const deleteIpRule = async (req, res) => {
 
 module.exports = {
   listUsers,
+  updateUserDetails,
   updateUserRole,
   updateUserStatus,
-  forcePasswordReset,
+  deleteUser,
   revokeSessions,
   getAuditLogs,
   getSettings,

@@ -28,7 +28,6 @@ const ensureSetting = async (key, value) => {
 const setupDatabase = async () => {
   await ensureColumn('users', 'role', '`role` VARCHAR(20) NOT NULL DEFAULT "user"');
   await ensureColumn('users', 'status', '`status` VARCHAR(20) NOT NULL DEFAULT "active"');
-  await ensureColumn('users', 'force_password_reset', '`force_password_reset` TINYINT(1) NOT NULL DEFAULT 0');
   await ensureColumn('users', 'failed_login_count', '`failed_login_count` INT NOT NULL DEFAULT 0');
   await ensureColumn('users', 'lock_until', '`lock_until` DATETIME NULL');
   await ensureColumn('users', 'session_version', '`session_version` INT NOT NULL DEFAULT 0');

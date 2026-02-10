@@ -4,6 +4,19 @@ const User = require('../models/userModel');
 const Admin = require('../models/adminModel');
 const { secret, expiresIn } = require('../config/jwt');
 
+const formatMySqlDateTime = (date) => {
+    const pad = (value) => String(value).padStart(2, '0');
+    return [
+        date.getFullYear(),
+        pad(date.getMonth() + 1),
+        pad(date.getDate())
+    ].join('-') + ' ' + [
+        pad(date.getHours()),
+        pad(date.getMinutes()),
+        pad(date.getSeconds())
+    ].join(':');
+};
+
 exports.register = async (req, res) => {
     try {
         const { email, password, first_name, last_name } = req.body;
@@ -60,7 +73,11 @@ exports.login = async (req, res) => {
         }
 
         if (user.lock_until && new Date(user.lock_until) > new Date()) {
-            return res.status(423).json({ error: 'Account locked. Try again later.' });
+            const remainingMs = new Date(user.lock_until).getTime() - Date.now();
+            const remainingMinutes = Math.max(1, Math.ceil(remainingMs / 60000));
+            return res.status(423).json({
+                error: `Account locked. Try again in ${remainingMinutes} minute${remainingMinutes === 1 ? '' : 's'}.`
+            });
         }
 
         // 🔍 Compare entered password with hashed password
@@ -69,18 +86,29 @@ exports.login = async (req, res) => {
             console.log('Incorrect password for user:', email);
             const settings = await Admin.getSettings();
             const security = settings.security || { lockAfterFailed: 5, lockMinutes: 15 };
+            const maxAttempts = Number(security.lockAfterFailed || 5);
+            const lockMinutes = Number(security.lockMinutes || 15);
             const failedCount = (user.failed_login_count || 0) + 1;
-            const shouldLock = failedCount >= Number(security.lockAfterFailed || 5);
+            const shouldLock = failedCount >= maxAttempts;
             const lockUntil = shouldLock
-                ? new Date(Date.now() + Number(security.lockMinutes || 15) * 60 * 1000)
+                ? new Date(Date.now() + lockMinutes * 60 * 1000)
                 : null;
 
             await User.updateUserFields(user.id, {
                 failed_login_count: failedCount,
-                lock_until: lockUntil ? lockUntil.toISOString().slice(0, 19).replace('T', ' ') : null
+                lock_until: lockUntil ? formatMySqlDateTime(lockUntil) : null
             });
 
-            return res.status(401).json({ error: 'Invalid Credentials' });
+            if (shouldLock) {
+                return res.status(423).json({
+                    error: `Account locked. Try again in ${lockMinutes} minute${lockMinutes === 1 ? '' : 's'}.`
+                });
+            }
+
+            const remaining = Math.max(0, maxAttempts - failedCount);
+            return res.status(401).json({
+                error: `Invalid Credentials. Attempts left: ${remaining}.`
+            });
         }
 
         if (user.role === 'admin') {
@@ -125,7 +153,7 @@ exports.login = async (req, res) => {
             lock_until: null,
             last_login_ip: req.ip,
             last_login_user_agent: userAgent,
-            last_login_at: new Date().toISOString().slice(0, 19).replace('T', ' ')
+            last_login_at: formatMySqlDateTime(new Date())
         });
 
         // 🔥 Generate JWT token
@@ -141,8 +169,7 @@ exports.login = async (req, res) => {
             user: {
                 id: user.id,
                 email: user.email,
-                role: user.role || 'user',
-                force_password_reset: !!user.force_password_reset
+                role: user.role || 'user'
             }
         });
 

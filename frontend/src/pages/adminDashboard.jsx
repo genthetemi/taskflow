@@ -4,7 +4,6 @@ import {
   fetchAdminUsers,
   updateUserRole,
   updateUserStatus,
-  forcePasswordReset,
   revokeSessions,
   fetchAuditLogs,
   fetchAdminSettings,
@@ -62,11 +61,6 @@ const AdminDashboard = () => {
     setUsers(prev => prev.map(user => (user.id === id ? { ...user, status: nextStatus } : user)));
   };
 
-  const handleForceReset = async (id) => {
-    await forcePasswordReset(id);
-    setUsers(prev => prev.map(user => (user.id === id ? { ...user, force_password_reset: 1 } : user)));
-  };
-
   const handleRevokeSessions = async (id) => {
     await revokeSessions(id);
     setMessage('Sessions revoked for the selected user.');
@@ -111,7 +105,6 @@ const AdminDashboard = () => {
                   <th>Role</th>
                   <th>Status</th>
                   <th>Security</th>
-                  <th>Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -142,14 +135,6 @@ const AdminDashboard = () => {
                         onClick={() => handleStatusToggle(user.id, status)}
                       >
                         {status === 'disabled' ? 'Disabled' : 'Active'}
-                      </button>
-                    </td>
-                    <td>
-                      <button
-                        className="btn btn-sm btn-outline-dark"
-                        onClick={() => handleForceReset(user.id)}
-                      >
-                        Force Reset
                       </button>
                     </td>
                     <td>
