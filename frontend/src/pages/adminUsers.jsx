@@ -1,15 +1,23 @@
 import { useEffect, useState } from 'react';
 import {
   fetchAdminUsers,
-  updateUserRole,
-  updateUserStatus,
-  forcePasswordReset,
+  updateUserDetails,
+  deleteUser,
   revokeSessions
 } from '../services/admin';
 
 const AdminUsers = () => {
   const [users, setUsers] = useState([]);
   const [message, setMessage] = useState('');
+  const [showEdit, setShowEdit] = useState(false);
+  const [editingUser, setEditingUser] = useState(null);
+  const [editForm, setEditForm] = useState({
+    first_name: '',
+    last_name: '',
+    email: '',
+    role: 'user',
+    status: 'active'
+  });
 
   const loadUsers = async () => {
     const data = await fetchAdminUsers();
@@ -20,26 +28,77 @@ const AdminUsers = () => {
     loadUsers().catch(() => setMessage('Failed to load users.'));
   }, []);
 
-  const handleRoleChange = async (id, role) => {
-    await updateUserRole(id, role);
-    setUsers(prev => prev.map(user => (user.id === id ? { ...user, role } : user)));
-  };
-
-  const handleStatusToggle = async (id, currentStatus) => {
-    const nextStatus = currentStatus === 'disabled' ? 'active' : 'disabled';
-    await updateUserStatus(id, nextStatus);
-    setUsers(prev => prev.map(user => (user.id === id ? { ...user, status: nextStatus } : user)));
-  };
-
-  const handleForceReset = async (id) => {
-    await forcePasswordReset(id);
-    setUsers(prev => prev.map(user => (user.id === id ? { ...user, force_password_reset: 1 } : user)));
-    setMessage('Password reset required on next login.');
-  };
-
   const handleRevokeSessions = async (id) => {
-    await revokeSessions(id);
-    setMessage('Sessions revoked for the selected user.');
+    try {
+      await revokeSessions(id);
+      setMessage('Sessions revoked for the selected user.');
+    } catch (error) {
+      const msg = error.response?.data?.error || 'Failed to revoke sessions.';
+      setMessage(msg);
+    }
+  };
+
+  const handleDeleteUser = async (id, email) => {
+    const ok = window.confirm(`Delete user ${email}? This cannot be undone.`);
+    if (!ok) return;
+
+    try {
+      await deleteUser(id);
+      await loadUsers();
+      setMessage('User deleted successfully.');
+    } catch (error) {
+      const msg = error.response?.data?.error || 'Failed to delete user.';
+      setMessage(msg);
+    }
+  };
+
+  const openEdit = (user) => {
+    setEditingUser(user);
+    setEditForm({
+      first_name: user.first_name || '',
+      last_name: user.last_name || '',
+      email: user.email || '',
+      role: user.role || 'user',
+      status: user.status || 'active'
+    });
+    setShowEdit(true);
+  };
+
+  const closeEdit = () => {
+    setShowEdit(false);
+    setEditingUser(null);
+  };
+
+  const handleEditSave = async (event) => {
+    event.preventDefault();
+    if (!editingUser) return;
+
+    const email = String(editForm.email || '').trim();
+    if (!email || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) {
+      setMessage('Please enter a valid email.');
+      return;
+    }
+
+    if (!String(editForm.first_name || '').trim() || !String(editForm.last_name || '').trim()) {
+      setMessage('First and last name are required.');
+      return;
+    }
+
+    try {
+      await updateUserDetails(editingUser.id, {
+        first_name: editForm.first_name.trim(),
+        last_name: editForm.last_name.trim(),
+        email,
+        role: editForm.role,
+        status: editForm.status
+      });
+      await loadUsers();
+      setMessage('User updated successfully.');
+      closeEdit();
+    } catch (error) {
+      const msg = error.response?.data?.error || 'Failed to update user.';
+      setMessage(msg);
+    }
   };
 
   return (
@@ -72,30 +131,12 @@ const AdminUsers = () => {
                     </div>
                   </td>
                   <td>
-                    <select
-                      value={role}
-                      onChange={(event) => handleRoleChange(user.id, event.target.value)}
-                      className="form-select"
-                    >
-                      <option value="user">User</option>
-                      <option value="admin">Admin</option>
-                    </select>
+                    <span className="badge bg-dark text-uppercase">{role}</span>
                   </td>
                   <td>
-                    <button
-                      className={`btn btn-sm ${status === 'disabled' ? 'btn-danger' : 'btn-outline-dark'}`}
-                      onClick={() => handleStatusToggle(user.id, status)}
-                    >
+                    <span className={`badge ${status === 'disabled' ? 'bg-danger' : 'bg-success'}`}>
                       {status === 'disabled' ? 'Disabled' : 'Active'}
-                    </button>
-                  </td>
-                  <td>
-                    <button
-                      className="btn btn-sm btn-outline-dark"
-                      onClick={() => handleForceReset(user.id)}
-                    >
-                      Force Reset
-                    </button>
+                    </span>
                   </td>
                   <td>
                     <button
@@ -105,12 +146,92 @@ const AdminUsers = () => {
                       Revoke Sessions
                     </button>
                   </td>
+                  <td>
+                    <button
+                      className="btn btn-sm btn-dark"
+                      onClick={() => openEdit(user)}
+                    >
+                      Edit
+                    </button>
+                    <button
+                      className="btn btn-sm btn-outline-danger ms-2"
+                      onClick={() => handleDeleteUser(user.id, user.email)}
+                    >
+                      Delete
+                    </button>
+                  </td>
                 </tr>
               );
             })}
           </tbody>
         </table>
       </div>
+
+      {showEdit && (
+        <div className="admin-modal-backdrop" role="dialog" aria-modal="true">
+          <div className="admin-modal-card">
+            <div className="admin-modal-header">
+              <h2>Edit user</h2>
+              <button className="btn btn-sm btn-outline-dark" onClick={closeEdit}>Close</button>
+            </div>
+            <form onSubmit={handleEditSave}>
+              <div className="admin-modal-grid">
+                <label className="admin-field">
+                  <span>First name</span>
+                  <input
+                    type="text"
+                    value={editForm.first_name}
+                    onChange={(event) => setEditForm(prev => ({ ...prev, first_name: event.target.value }))}
+                    required
+                  />
+                </label>
+                <label className="admin-field">
+                  <span>Last name</span>
+                  <input
+                    type="text"
+                    value={editForm.last_name}
+                    onChange={(event) => setEditForm(prev => ({ ...prev, last_name: event.target.value }))}
+                    required
+                  />
+                </label>
+                <label className="admin-field admin-field-full">
+                  <span>Email</span>
+                  <input
+                    type="email"
+                    value={editForm.email}
+                    onChange={(event) => setEditForm(prev => ({ ...prev, email: event.target.value }))}
+                    required
+                  />
+                </label>
+                <label className="admin-field">
+                  <span>Role</span>
+                  <select
+                    value={editForm.role}
+                    onChange={(event) => setEditForm(prev => ({ ...prev, role: event.target.value }))}
+                  >
+                    <option value="user">User</option>
+                    <option value="admin">Admin</option>
+                  </select>
+                </label>
+                <label className="admin-field">
+                  <span>Status</span>
+                  <select
+                    value={editForm.status}
+                    onChange={(event) => setEditForm(prev => ({ ...prev, status: event.target.value }))}
+                  >
+                    <option value="active">Active</option>
+                    <option value="disabled">Disabled</option>
+                  </select>
+                </label>
+              </div>
+              <div className="admin-modal-actions">
+                <button type="button" className="btn btn-outline-dark" onClick={closeEdit}>Cancel</button>
+                <button type="submit" className="btn btn-dark">Save changes</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

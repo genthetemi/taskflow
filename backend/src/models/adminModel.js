@@ -3,7 +3,7 @@ const pool = require('../config/db');
 const getUsers = async () => {
   try {
     const [rows] = await pool.query(
-      'SELECT id, email, first_name, last_name, role, status, force_password_reset, failed_login_count, lock_until, last_login_ip, last_login_at FROM users ORDER BY id DESC'
+      'SELECT id, email, first_name, last_name, role, status, failed_login_count, lock_until, last_login_ip, last_login_at FROM users ORDER BY id DESC'
     );
     return rows;
   } catch (error) {
@@ -17,7 +17,6 @@ const getUsers = async () => {
         last_name: '',
         role: 'user',
         status: 'active',
-        force_password_reset: 0,
         failed_login_count: 0,
         lock_until: null,
         last_login_ip: null,
@@ -46,6 +45,19 @@ const updateUser = async (userId, fields) => {
     }
     throw error;
   }
+};
+
+const deleteUser = async (userId) => {
+  const [rows] = await pool.query('SELECT id FROM users WHERE id = ?', [userId]);
+  if (!rows.length) {
+    const notFound = new Error('User not found');
+    notFound.code = 'NOT_FOUND';
+    throw notFound;
+  }
+
+  await pool.query('DELETE FROM tasks WHERE user_id = ?', [userId]);
+  await pool.query('DELETE FROM boards WHERE user_id = ?', [userId]);
+  await pool.query('DELETE FROM users WHERE id = ?', [userId]);
 };
 
 const incrementSessionVersion = async (userId) => {
@@ -114,6 +126,7 @@ const getIpRulesForCheck = async () => {
 module.exports = {
   getUsers,
   updateUser,
+  deleteUser,
   incrementSessionVersion,
   getAuditLogs,
   addAuditLog,

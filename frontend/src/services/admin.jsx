@@ -19,6 +19,15 @@ export const updateUserRole = async (id, role) => {
   return response.data;
 };
 
+export const updateUserDetails = async (id, payload) => {
+  const response = await axios.patch(
+    `${API_URL}/api/admin/users/${id}`,
+    payload,
+    { headers: getAuthHeader() }
+  );
+  return response.data;
+};
+
 export const updateUserStatus = async (id, status) => {
   const response = await axios.patch(
     `${API_URL}/api/admin/users/${id}/status`,
@@ -28,10 +37,9 @@ export const updateUserStatus = async (id, status) => {
   return response.data;
 };
 
-export const forcePasswordReset = async (id) => {
-  const response = await axios.post(
-    `${API_URL}/api/admin/users/${id}/force-password-reset`,
-    {},
+export const deleteUser = async (id) => {
+  const response = await axios.delete(
+    `${API_URL}/api/admin/users/${id}`,
     { headers: getAuthHeader() }
   );
   return response.data;
