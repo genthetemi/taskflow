@@ -57,7 +57,12 @@ const Sidebar = ({ boards, activeBoard, onBoardSelect, onCreateBoard, onEditBoar
           <div
             key={board.id}
             className={`board-item ${activeBoard?.id === board.id ? 'active' : ''}`}
-            onClick={() => onBoardSelect(board)}
+            onClick={() => {
+              onBoardSelect(board);
+              if (onClose) {
+                onClose();
+              }
+            }}
             role="button"
             tabIndex={0}
           >

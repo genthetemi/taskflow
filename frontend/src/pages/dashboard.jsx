@@ -1,4 +1,6 @@
 import { useEffect, useState } from 'react';
+import { Navigate } from 'react-router-dom';
+import { useAuth } from '../context/authContext';
 import { Container, Row, Col, Card, Alert, Modal, Form, Button } from 'react-bootstrap';
 import Navbar from '../components/navbar';
 import TaskList from '../components/taskList';
@@ -9,6 +11,7 @@ import { fetchBoards, createBoard, updateBoard, deleteBoard } from '../services/
 import '../styles/dashboard.css';
 
 const Dashboard = () => {
+  const { user } = useAuth();
   // State declarations
   const [tasks, setTasks] = useState([]);
   const [boards, setBoards] = useState([]);
@@ -25,7 +28,7 @@ const Dashboard = () => {
     status: 'pending',
     priority: 'medium'
   });
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   const toggleSidebar = () => setIsSidebarOpen(v => !v);
 
@@ -190,11 +193,31 @@ const Dashboard = () => {
     }
   };
 
-  // Use all tasks (filtering can be added later if needed)
-  const filteredTasks = tasks;
+  const handleMoveTask = async (taskId, nextStatus) => {
+    const task = tasks.find(item => item.id === taskId);
+    if (!task || !activeBoard?.id) return;
+    const currentStatus = (task.status || 'pending').toLowerCase();
+    if (currentStatus === nextStatus) return;
+
+    try {
+      await updateTask(task.id, {
+        ...task,
+        status: nextStatus,
+        board_id: activeBoard.id
+      });
+      const updatedTasks = await fetchTasks(activeBoard.id);
+      setTasks(updatedTasks);
+    } catch (err) {
+      setError('Failed to move task');
+    }
+  };
+
+  if (user?.role === 'admin') {
+    return <Navigate to="/admin" replace />;
+  }
 
   return (
-    <div className="dashboard-wrapper">
+    <div className={`dashboard-wrapper ${isSidebarOpen ? 'sidebar-open' : ''}`}>
       <Sidebar 
         boards={boards}
         activeBoard={activeBoard}
@@ -214,7 +237,17 @@ const Dashboard = () => {
         
         <Container fluid className="dashboard-container">
           <div className="dashboard-header">
-            <h1>{activeBoard?.name || 'Select a Board'}</h1>
+            <div className="dashboard-header-left">
+              <button
+                className="btn btn-secondary dashboard-menu-btn"
+                type="button"
+                onClick={toggleSidebar}
+                aria-label="Toggle boards"
+              >
+                <i className="fas fa-bars"></i>
+              </button>
+              <h1>{activeBoard?.name || 'Select a Board'}</h1>
+            </div>
             <button 
               className="btn btn-primary"
               disabled={!activeBoard}
@@ -262,22 +295,14 @@ const Dashboard = () => {
               <Card className="task-list-card">
                 <Card.Header className="task-list-header">
                   <h3>{activeBoard.name} Tasks</h3>
-                  {/* In dashboard.jsx - update the status options */}
-                  <Form.Select
-                    value={editingTask?.status || 'pending'}
-                    onChange={(e) => setEditingTask({...editingTask, status: e.target.value})}
-                  >
-                    <option value="pending">Pending</option>
-                    <option value="in-progress">In Progress</option>
-                    <option value="completed">Completed</option>
-                  </Form.Select>
                 </Card.Header>
                 <Card.Body>
                   <TaskList 
-                    tasks={filteredTasks}
+                    tasks={tasks}
                     onEditTask={handleEditTask}
                     onDeleteTask={handleDeleteTask}
                     onToggleStatus={handleToggleStatus}
+                    onMoveTask={handleMoveTask}
                   />
                 </Card.Body>
               </Card>
@@ -447,5 +472,4 @@ const Dashboard = () => {
     </div>
   );
 };
-
 export default Dashboard;

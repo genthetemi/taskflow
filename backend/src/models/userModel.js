@@ -33,7 +33,25 @@ const findUserByEmail = async (email) => {
     return rows[0];
 };
 
+const findUserById = async (id) => {
+    const [rows] = await pool.query('SELECT * FROM users WHERE id = ?', [id]);
+    return rows[0];
+};
+
+const updateUserFields = async (id, fields) => {
+    const keys = Object.keys(fields).filter(key => fields[key] !== undefined);
+    if (!keys.length) return;
+
+    const setClause = keys.map(key => `${key} = ?`).join(', ');
+    const values = keys.map(key => fields[key]);
+    values.push(id);
+
+    await pool.query(`UPDATE users SET ${setClause} WHERE id = ?`, values);
+};
+
 module.exports = {
     createUser,
     findUserByEmail,
+    findUserById,
+    updateUserFields,
 };

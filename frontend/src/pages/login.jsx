@@ -27,7 +27,8 @@ const Login = () => {
       navigate('/dashboard', { replace: true });
     } catch (err) {
       console.error('Login error:', err);
-      setError('Login failed. Please try again.');
+      const message = err.response?.data?.error || 'Login failed. Please try again.';
+      setError(message);
     } finally {
       setLoading(false);
     }
