@@ -69,8 +69,8 @@ const Contact = () => {
     {
       icon: <FiMail />,
       title: 'EMAIL',
-      content: 'hello@taskflow.io',
-      link: 'mailto:hello@taskflow.io'
+      content: 'info@taskflow.io',
+      link: 'mailto:info@taskflow.io'
     },
     {
       icon: <FiPhone />,
