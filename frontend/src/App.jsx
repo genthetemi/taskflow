@@ -13,6 +13,7 @@ import AdminAudit from './pages/adminAudit';
 import Home from './pages/home';
 import About from './pages/about';
 import Features from './pages/features';
+import Contact from './pages/contact';
 import AdminRoute from './components/adminRoute';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import './App.css';
@@ -26,6 +27,7 @@ function App() {
           <Route path="/" element={<Home />} />
           <Route path="/about" element={<About />} />
           <Route path="/features" element={<Features />} />
+          <Route path="/contact" element={<Contact />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
           

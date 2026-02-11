@@ -1,9 +1,11 @@
 const express = require('express');
 const cors = require('cors');
 const mysql = require('mysql2/promise'); // Use promise-based MySQL
+require('dotenv').config(); // Load environment variables
 const taskRoutes = require('./src/routes/taskRoutes'); // Ensure this path is correct
 const boardRoutes = require('./src/routes/boardRoutes');
 const adminRoutes = require('./src/routes/adminRoutes');
+const contactRoutes = require('./src/routes/contactRoutes');
 
 const authRoutes = require('./src/routes/authRoutes');
 const swaggerUI = require('swagger-ui-express');
@@ -23,6 +25,7 @@ app.use(express.json());
 app.use('/api/auth', authRoutes);
 app.use('/api/boards', boardRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/contact', contactRoutes);
 
 // Documentation endpoint
 app.use('/api-docs', 
