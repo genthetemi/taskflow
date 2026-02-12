@@ -1,4 +1,5 @@
 const pool = require('../config/db');
+const bcrypt = require('bcrypt');
 
 const getUsers = async () => {
   try {
@@ -118,6 +119,40 @@ const deleteIpRule = async (ruleId) => {
   await pool.query('DELETE FROM ip_rules WHERE id = ?', [ruleId]);
 };
 
+const createUser = async ({ email, password, first_name, last_name, role, status }) => {
+  const hashedPassword = await bcrypt.hash(password, 10);
+  const safeFirstName = first_name || '';
+  const safeLastName = last_name || '';
+
+  try {
+    const [result] = await pool.query(
+      'INSERT INTO users (first_name, last_name, email, password, role, status) VALUES (?, ?, ?, ?, ?, ?)',
+      [safeFirstName, safeLastName, email, hashedPassword, role, status]
+    );
+    return result;
+  } catch (error) {
+    if (error && error.code === 'ER_BAD_FIELD_ERROR') {
+      try {
+        const [result] = await pool.query(
+          'INSERT INTO users (first_name, last_name, email, password) VALUES (?, ?, ?, ?)',
+          [safeFirstName, safeLastName, email, hashedPassword]
+        );
+        return result;
+      } catch (fallbackError) {
+        if (fallbackError && fallbackError.code === 'ER_BAD_FIELD_ERROR') {
+          const [result] = await pool.query(
+            'INSERT INTO users (email, password) VALUES (?, ?)',
+            [email, hashedPassword]
+          );
+          return result;
+        }
+        throw fallbackError;
+      }
+    }
+    throw error;
+  }
+};
+
 const getIpRulesForCheck = async () => {
   const [rows] = await pool.query('SELECT ip, rule_type FROM ip_rules');
   return rows;
@@ -136,4 +171,5 @@ module.exports = {
   addIpRule,
   deleteIpRule,
   getIpRulesForCheck,
+  createUser,
 };

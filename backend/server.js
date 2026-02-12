@@ -4,6 +4,7 @@ const mysql = require('mysql2/promise'); // Use promise-based MySQL
 const taskRoutes = require('./src/routes/taskRoutes'); // Ensure this path is correct
 const boardRoutes = require('./src/routes/boardRoutes');
 const adminRoutes = require('./src/routes/adminRoutes');
+const faqRoutes = require('./src/routes/faqRoutes');
 
 const authRoutes = require('./src/routes/authRoutes');
 const swaggerUI = require('swagger-ui-express');
@@ -23,6 +24,7 @@ app.use(express.json());
 app.use('/api/auth', authRoutes);
 app.use('/api/boards', boardRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/faq', faqRoutes);
 
 // Documentation endpoint
 app.use('/api-docs', 
