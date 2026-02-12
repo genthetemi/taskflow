@@ -3,11 +3,15 @@
   --admin-text: #111111;
   --admin-border: 2px solid #111111;
   --admin-shadow: 4px 4px 0px 0px #111111;
+  --accent-primary: #0066cc;
+  --accent-success: #0d8a2d;
+  --accent-warning: #b25900;
+  --accent-danger: #c41e3a;
 }
 
 .admin-wrapper {
   min-height: 100vh;
-  background: var(--admin-bg);
+  background: #ffffff;
   color: var(--admin-text);
   padding-top: 73px;
 }
@@ -29,6 +33,7 @@
   font-weight: 900;
   text-transform: uppercase;
   margin-bottom: 1rem;
+  color: var(--admin-text);
 }
 
 .admin-nav {
@@ -45,11 +50,19 @@
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.04em;
+  transition: all 0.2s ease;
+}
+
+.admin-link:hover {
+  background: var(--accent-primary);
+  color: #ffffff;
+  border-color: var(--accent-primary);
 }
 
 .admin-link.active {
-  background: #111111;
+  background: var(--accent-primary);
   color: #ffffff;
+  border-color: var(--accent-primary);
 }
 
 .admin-main {
@@ -73,6 +86,7 @@
   text-transform: uppercase;
   letter-spacing: -0.03em;
   margin: 0;
+  color: var(--admin-text);
 }
 
 .admin-message {
@@ -81,6 +95,7 @@
   padding: 0.75rem 1rem;
   font-weight: 600;
   margin: 0;
+  border-left: 4px solid #111111;
 }
 
 .admin-section {
@@ -92,6 +107,9 @@
   font-weight: 900;
   text-transform: uppercase;
   margin-bottom: 1rem;
+  color: var(--admin-text);
+  padding-bottom: 0.5rem;
+  border-bottom: var(--admin-border);
 }
 
 .admin-grid {
@@ -105,6 +123,17 @@
   border: var(--admin-border);
   padding: 1.25rem;
   box-shadow: var(--admin-shadow);
+  transition: all 0.2s ease;
+}
+
+.admin-card:hover {
+  border-color: var(--accent-primary);
+  box-shadow: 4px 4px 0 var(--accent-primary);
+}
+
+.admin-card h3 {
+  color: var(--admin-text);
+  margin-top: 0;
 }
 
 .admin-table {
@@ -112,10 +141,15 @@
   border: var(--admin-border);
 }
 
-.admin-table th,
+.admin-table th {
+  background: #111111;
+  color: #ffffff;
+  border-bottom: var(--admin-border);
+}
+
 .admin-table td {
   vertical-align: middle;
-  border-bottom: 1px solid #111111;
+  border-bottom: 1px solid #e5e7eb;
 }
 
 .admin-user {
@@ -146,6 +180,12 @@
   display: flex;
   flex-direction: column;
   gap: 1rem;
+  transition: all 0.2s ease;
+}
+
+.admin-user-card:hover {
+  border-color: var(--accent-primary);
+  box-shadow: 6px 6px 0 var(--accent-primary);
 }
 
 .admin-user-top {
@@ -169,23 +209,61 @@
   padding: 0.25rem 0.5rem;
   border: var(--admin-border);
   background: #ffffff;
+  display: inline-block;
 }
 
 .admin-pill.admin {
   background: #111111;
   color: #ffffff;
+  border-color: #111111;
+}
+
+.admin-pill.user {
+  background: #ffffff;
+  color: var(--accent-primary);
+  border-color: var(--accent-primary);
 }
 
 .admin-pill.active {
-  border-color: #0f5132;
-  color: #0f5132;
-  background: #e7f9ed;
+  background: #ffffff;
+  color: var(--accent-success);
+  border-color: var(--accent-success);
 }
 
 .admin-pill.disabled {
-  border-color: #8b1e1e;
-  color: #8b1e1e;
-  background: #ffe9e7;
+  background: #ffffff;
+  color: var(--accent-danger);
+  border-color: var(--accent-danger);
+}
+
+.admin-pill.open {
+  background: #ffffff;
+  color: var(--accent-warning);
+  border-color: var(--accent-warning);
+}
+
+.admin-pill.answered {
+  background: #ffffff;
+  color: var(--accent-success);
+  border-color: var(--accent-success);
+}
+
+.admin-pill.closed {
+  background: #ffffff;
+  color: #888888;
+  border-color: #888888;
+}
+
+.admin-pill.published {
+  background: #ffffff;
+  color: var(--accent-success);
+  border-color: var(--accent-success);
+}
+
+.admin-pill.draft {
+  background: #ffffff;
+  color: var(--accent-warning);
+  border-color: var(--accent-warning);
 }
 
 .admin-user-controls {
@@ -205,7 +283,7 @@
   text-transform: uppercase;
   letter-spacing: 0.12em;
   font-weight: 800;
-  color: #6b7280;
+  color: var(--admin-text);
 }
 
 .admin-segment {
@@ -240,6 +318,18 @@
 .admin-inline select {
   border: var(--admin-border);
   padding: 0.4rem 0.6rem;
+  background: white;
+  color: var(--admin-text);
+  transition: border-color 0.2s ease;
+}
+
+.admin-field input:focus,
+.admin-field select:focus,
+.admin-inline input:focus,
+.admin-inline select:focus {
+  outline: none;
+  border-color: var(--accent-primary);
+  box-shadow: 0 0 0 3px rgba(0, 102, 204, 0.15);
 }
 
 .admin-toggle {
@@ -268,6 +358,13 @@
   padding: 0.6rem 0.8rem;
   border: var(--admin-border);
   background: #ffffff;
+  transition: all 0.2s ease;
+}
+
+.admin-rule-list li:hover,
+.admin-log-list li:hover {
+  border-color: var(--accent-primary);
+  box-shadow: 2px 2px 0 var(--accent-primary);
 }
 
 .admin-modal-backdrop {
@@ -294,6 +391,8 @@
   justify-content: space-between;
   align-items: center;
   margin-bottom: 1rem;
+  padding-bottom: 1rem;
+  border-bottom: var(--admin-border);
 }
 
 .admin-modal-header h2 {
@@ -301,6 +400,7 @@
   font-size: 1.5rem;
   font-weight: 900;
   text-transform: uppercase;
+  color: var(--admin-text);
 }
 
 .admin-modal-grid {
@@ -329,6 +429,154 @@
   margin-top: 1.5rem;
 }
 
+/* FAQ Inbox Styles */
+.admin-faq-filter {
+  display: flex;
+  gap: 0.75rem;
+  align-items: flex-end;
+  margin-bottom: 2rem;
+  padding-bottom: 1rem;
+  border-bottom: var(--admin-border);
+}
+
+.admin-faq-select {
+  border: var(--admin-border);
+  padding: 0.4rem 0.6rem;
+  flex: 0 0 200px;
+  background: white;
+  color: var(--admin-text);
+  transition: border-color 0.2s ease;
+}
+
+.admin-faq-select:focus {
+  outline: none;
+  border-color: var(--accent-primary);
+}
+
+.admin-faq-empty {
+  background: #ffffff;
+  border: var(--admin-border);
+  padding: 2rem;
+  text-align: center;
+  font-style: italic;
+  color: var(--accent-warning);
+  border-left: 4px solid var(--accent-warning);
+}
+
+.admin-faq-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.admin-faq-card {
+  background: #ffffff;
+  border: var(--admin-border);
+  box-shadow: var(--admin-shadow);
+  padding: 1.5rem;
+  transition: all 0.2s ease;
+}
+
+.admin-faq-card:hover {
+  border-color: var(--accent-primary);
+  box-shadow: 6px 6px 0 var(--accent-primary);
+}
+
+.admin-faq-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+  margin-bottom: 1rem;
+  padding-bottom: 1rem;
+  border-bottom: 2px solid var(--accent-primary);
+}
+
+.admin-faq-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.faq-from {
+  font-weight: 700;
+  font-size: 0.95rem;
+  color: var(--accent-primary);
+}
+
+.faq-date {
+  font-size: 0.75rem;
+  color: #666666;
+  letter-spacing: 0.05em;
+}
+
+.admin-faq-badges {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.admin-faq-question {
+  font-size: 1rem;
+  line-height: 1.5;
+  margin-bottom: 1.25rem;
+}
+
+.admin-faq-question strong {
+  font-weight: 700;
+  margin-right: 0.5rem;
+  color: var(--accent-primary);
+}
+
+.admin-faq-answer-section {
+  margin-bottom: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.admin-faq-answer-section label {
+  color: var(--accent-primary);
+}
+
+.admin-faq-textarea {
+  border: var(--admin-border);
+  padding: 0.6rem 0.8rem;
+  font-family: 'Space Mono', monospace;
+  font-size: 0.9rem;
+  resize: vertical;
+  transition: border-color 0.2s ease;
+}
+
+.admin-faq-textarea:focus {
+  outline: none;
+  border-color: var(--accent-primary);
+  box-shadow: 0 0 0 3px rgba(0, 102, 204, 0.15);
+}
+
+.admin-faq-controls {
+  display: flex;
+  gap: 1rem;
+  align-items: flex-end;
+}
+
+.admin-faq-control-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  flex: 1;
+  min-width: 150px;
+}
+
+.admin-faq-control-group label {
+  color: var(--accent-primary);
+}
+
+.admin-faq-control-group .admin-faq-select {
+  flex: 1;
+}
+
 @media (max-width: 768px) {
   .admin-shell {
     flex-direction: column;
@@ -352,5 +600,21 @@
 
   .admin-modal-grid {
     grid-template-columns: 1fr;
+  }
+
+  .admin-faq-header {
+    flex-direction: column;
+  }
+
+  .admin-faq-badges {
+    justify-content: flex-start;
+  }
+
+  .admin-faq-controls {
+    flex-direction: column;
+  }
+
+  .admin-faq-control-group {
+    width: 100%;
   }
 }

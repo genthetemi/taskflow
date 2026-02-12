@@ -10,6 +10,15 @@ export const fetchAdminUsers = async () => {
   return response.data;
 };
 
+export const createAdminUser = async (payload) => {
+  const response = await axios.post(
+    `${API_URL}/api/admin/users`,
+    payload,
+    { headers: getAuthHeader() }
+  );
+  return response.data;
+};
+
 export const updateUserRole = async (id, role) => {
   const response = await axios.patch(
     `${API_URL}/api/admin/users/${id}/role`,
@@ -96,6 +105,23 @@ export const addIpRule = async (payload) => {
 export const deleteIpRule = async (id) => {
   const response = await axios.delete(
     `${API_URL}/api/admin/ip-rules/${id}`,
+    { headers: getAuthHeader() }
+  );
+  return response.data;
+};
+
+export const fetchFaqQuestions = async (status = 'all') => {
+  const response = await axios.get(`${API_URL}/api/admin/faq-questions`, {
+    headers: getAuthHeader(),
+    params: { status }
+  });
+  return response.data;
+};
+
+export const updateFaqQuestion = async (id, payload) => {
+  const response = await axios.patch(
+    `${API_URL}/api/admin/faq-questions/${id}`,
+    payload,
     { headers: getAuthHeader() }
   );
   return response.data;
