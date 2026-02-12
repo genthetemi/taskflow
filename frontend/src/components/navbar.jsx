@@ -50,6 +50,9 @@ const Navbar = ({ onSidebarToggle }) => {
               <Link className="nav-link" to="/about" onClick={() => setOpen(false)}>ABOUT</Link>
             </li>
             <li className="nav-item">
+              <Link className="nav-link" to="/contact" onClick={() => setOpen(false)}>CONTACT</Link>
+            </li>
+            <li className="nav-item">
               <Link className="nav-link" to="/faq" onClick={() => setOpen(false)}>FAQ</Link>
             </li>
             {user?.role !== 'admin' && (
