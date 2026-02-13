@@ -127,10 +127,15 @@ exports.inviteUserToBoard = async (req, res) => {
       return res.status(400).json({ error: 'You are already the board owner' });
     }
 
-    await Board.addBoardMember(boardId, invitedUser.id, req.userId, 'member');
+    const alreadyMember = await Board.isBoardMember(boardId, invitedUser.id);
+    if (alreadyMember) {
+      return res.status(400).json({ error: 'User is already a board member' });
+    }
 
-    return res.status(200).json({
-      message: 'User invited to board successfully',
+    await Board.createBoardInvitation(boardId, req.userId, invitedUser.id);
+
+    return res.status(201).json({
+      message: 'Invitation sent successfully',
       board_id: boardId,
       invited_user: {
         id: invitedUser.id,
@@ -140,5 +145,47 @@ exports.inviteUserToBoard = async (req, res) => {
   } catch (error) {
     console.error('Error inviting user to board:', error);
     return res.status(500).json({ error: 'Failed to invite user to board' });
+  }
+};
+
+exports.getMyInvitations = async (req, res) => {
+  try {
+    const invitations = await Board.getPendingInvitationsForUser(req.userId);
+    return res.status(200).json(invitations);
+  } catch (error) {
+    console.error('Error loading invitations:', error);
+    return res.status(500).json({ error: 'Failed to load invitations' });
+  }
+};
+
+exports.respondToInvitation = async (req, res) => {
+  try {
+    const invitationId = Number(req.params.invitationId);
+    const action = String(req.body?.action || '').trim().toLowerCase();
+
+    if (!invitationId || !['accept', 'reject'].includes(action)) {
+      return res.status(400).json({ error: 'Valid invitation id and action are required' });
+    }
+
+    const invitation = await Board.getInvitationForUser(invitationId, req.userId);
+    if (!invitation) {
+      return res.status(404).json({ error: 'Invitation not found' });
+    }
+
+    if (invitation.status !== 'pending') {
+      return res.status(400).json({ error: `Invitation already ${invitation.status}` });
+    }
+
+    if (action === 'accept') {
+      await Board.addBoardMember(invitation.board_id, req.userId, invitation.inviter_user_id, 'member');
+      await Board.respondToInvitation(invitationId, 'accepted');
+      return res.status(200).json({ message: 'Invitation accepted', board_id: invitation.board_id });
+    }
+
+    await Board.respondToInvitation(invitationId, 'rejected');
+    return res.status(200).json({ message: 'Invitation rejected', board_id: invitation.board_id });
+  } catch (error) {
+    console.error('Error responding to invitation:', error);
+    return res.status(500).json({ error: 'Failed to respond to invitation' });
   }
 };

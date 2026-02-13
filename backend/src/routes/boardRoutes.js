@@ -4,6 +4,8 @@ const router = express.Router();
 const { 
   createBoard,
   getBoards,
+  getMyInvitations,
+  respondToInvitation,
   getBoard,
   updateBoard,
   deleteBoard,
@@ -15,6 +17,8 @@ router.use(authenticate);
 
 router.post('/', createBoard);
 router.get('/', getBoards);
+router.get('/invitations', getMyInvitations);
+router.post('/invitations/:invitationId/respond', respondToInvitation);
 router.get('/:id', getBoard);
 router.put('/:id', updateBoard);
 router.delete('/:id', deleteBoard);

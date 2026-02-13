@@ -64,3 +64,54 @@ export const updateBoard = async (boardId, boardData) => {
     throw error;
   }
 };
+
+export const inviteBoardUser = async (boardId, email) => {
+  try {
+    const response = await axios.post(
+      `${API_URL}/api/boards/${boardId}/invite`,
+      { email },
+      { headers: getAuthHeader() }
+    );
+    return response.data;
+  } catch (error) {
+    console.error('Error inviting board user:', error);
+    if (error.response?.status === 401) {
+      handleUnauthorized();
+    }
+    const serverMsg = error.response?.data?.error || error.message || 'Failed to invite user';
+    throw new Error(serverMsg);
+  }
+};
+
+export const fetchBoardInvitations = async () => {
+  try {
+    const response = await axios.get(`${API_URL}/api/boards/invitations`, {
+      headers: getAuthHeader()
+    });
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching board invitations:', error);
+    if (error.response?.status === 401) {
+      handleUnauthorized();
+    }
+    throw error;
+  }
+};
+
+export const respondToBoardInvitation = async (invitationId, action) => {
+  try {
+    const response = await axios.post(
+      `${API_URL}/api/boards/invitations/${invitationId}/respond`,
+      { action },
+      { headers: getAuthHeader() }
+    );
+    return response.data;
+  } catch (error) {
+    console.error('Error responding to board invitation:', error);
+    if (error.response?.status === 401) {
+      handleUnauthorized();
+    }
+    const serverMsg = error.response?.data?.error || error.message || 'Failed to respond to invitation';
+    throw new Error(serverMsg);
+  }
+};

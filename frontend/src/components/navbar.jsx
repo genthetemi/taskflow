@@ -1,16 +1,24 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, NavLink } from 'react-router-dom';
 import { useAuth } from '../context/authContext';
 import '../styles/navbar.css'; // Import the navbar styles
 
-const Navbar = ({ onSidebarToggle }) => {
+const Navbar = ({
+  onSidebarToggle,
+  notificationsCount = 0,
+  notifications = [],
+  isNotificationsLoading = false,
+  onRespondInvitation
+}) => {
   const { user, logout } = useAuth();
   const [open, setOpen] = useState(false);
+  const [showNotificationsDropdown, setShowNotificationsDropdown] = useState(false);
 
   const toggle = () => setOpen(!open);
+  const getNavLinkClass = ({ isActive }) => `nav-link ${isActive ? 'active-link' : ''}`;
 
   return (
-    <nav className="navbar navbar-expand-lg navbar-light bg-light fixed-top">
+    <nav className="navbar navbar-expand-lg navbar-light fixed-top">
       <div className="container">
         <div className="d-flex align-items-center gap-2">
           <button
@@ -39,30 +47,30 @@ const Navbar = ({ onSidebarToggle }) => {
         </button>
 
         <div className={`collapse navbar-collapse ${open ? 'show' : ''}`} id="main-nav">
-          <ul className="navbar-nav mx-auto">
+          <ul className="navbar-nav me-auto ms-3">
             <li className="nav-item">
-              <Link className="nav-link" to="/" onClick={() => setOpen(false)}>HOME</Link>
+              <NavLink end className={getNavLinkClass} to="/" onClick={() => setOpen(false)}>HOME</NavLink>
             </li>
             <li className="nav-item">
-              <Link className="nav-link" to="/features" onClick={() => setOpen(false)}>FEATURES</Link>
+              <NavLink className={getNavLinkClass} to="/features" onClick={() => setOpen(false)}>FEATURES</NavLink>
             </li>
             <li className="nav-item">
-              <Link className="nav-link" to="/about" onClick={() => setOpen(false)}>ABOUT</Link>
+              <NavLink className={getNavLinkClass} to="/about" onClick={() => setOpen(false)}>ABOUT</NavLink>
             </li>
             <li className="nav-item">
-              <Link className="nav-link" to="/contact" onClick={() => setOpen(false)}>CONTACT</Link>
+              <NavLink className={getNavLinkClass} to="/contact" onClick={() => setOpen(false)}>CONTACT</NavLink>
             </li>
             <li className="nav-item">
-              <Link className="nav-link" to="/faq" onClick={() => setOpen(false)}>FAQ</Link>
+              <NavLink className={getNavLinkClass} to="/faq" onClick={() => setOpen(false)}>FAQ</NavLink>
             </li>
             {user?.role !== 'admin' && (
               <li className="nav-item">
-                <Link className="nav-link" to="/dashboard" onClick={() => setOpen(false)}>DASHBOARD</Link>
+                <NavLink className={getNavLinkClass} to="/dashboard" onClick={() => setOpen(false)}>DASHBOARD</NavLink>
               </li>
             )}
             {user?.role === 'admin' && (
               <li className="nav-item">
-                <Link className="nav-link" to="/admin" onClick={() => setOpen(false)}>ADMIN</Link>
+                <NavLink className={getNavLinkClass} to="/admin" onClick={() => setOpen(false)}>ADMIN</NavLink>
               </li>
             )}
           </ul>
@@ -70,6 +78,54 @@ const Navbar = ({ onSidebarToggle }) => {
           <div className="d-flex">
             {user ? (
               <>
+                {
+                  <button
+                    className="btn btn-outline-primary me-2 navbar-notifications-btn"
+                    onClick={() => setShowNotificationsDropdown((v) => !v)}
+                    type="button"
+                    aria-label="Open notifications"
+                    title="Notifications"
+                  >
+                    <i className="fas fa-bell"></i>
+                    {notificationsCount > 0 && (
+                      <span className="navbar-notification-badge">{notificationsCount}</span>
+                    )}
+                  </button>
+                }
+                {showNotificationsDropdown && (
+                  <div className="navbar-notifications-dropdown">
+                    <div className="navbar-notifications-title">Board Invitations</div>
+                    {isNotificationsLoading ? (
+                      <div className="navbar-notification-empty">Loading invitations...</div>
+                    ) : notifications.length === 0 ? (
+                      <div className="navbar-notification-empty">No new notifications</div>
+                    ) : (
+                      notifications.map((invitation) => (
+                        <div className="navbar-notification-item" key={invitation.id}>
+                          <div className="navbar-notification-text">
+                            <strong>{invitation.inviter_email}</strong> invited you to <strong>{invitation.board_name}</strong>
+                          </div>
+                          <div className="navbar-notification-actions">
+                            <button
+                              className="btn btn-sm btn-secondary"
+                              type="button"
+                              onClick={() => onRespondInvitation && onRespondInvitation(invitation.id, 'reject')}
+                            >
+                              Reject
+                            </button>
+                            <button
+                              className="btn btn-sm btn-primary"
+                              type="button"
+                              onClick={() => onRespondInvitation && onRespondInvitation(invitation.id, 'accept')}
+                            >
+                              Accept
+                            </button>
+                          </div>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                )}
                 <span className="nav-link welcome-text me-3">Welcome, {user.email}</span>
                 <button className="btn btn-danger" onClick={logout}>LOGOUT</button>
               </>

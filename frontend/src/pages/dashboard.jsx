@@ -7,7 +7,15 @@ import TaskList from '../components/taskList';
 import Sidebar from '../components/sidebar';
 import StatsCard from '../components/statsCard';
 import { fetchTasks, createTask, updateTask, deleteTask } from '../services/tasks';
-import { fetchBoards, createBoard, updateBoard, deleteBoard } from '../services/boards';
+import {
+  fetchBoards,
+  createBoard,
+  updateBoard,
+  deleteBoard,
+  inviteBoardUser,
+  fetchBoardInvitations,
+  respondToBoardInvitation
+} from '../services/boards';
 import '../styles/dashboard.css';
 
 const Dashboard = () => {
@@ -17,7 +25,11 @@ const Dashboard = () => {
   const [boards, setBoards] = useState([]);
   const [activeBoard, setActiveBoard] = useState(null);
   const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
+  const [invitations, setInvitations] = useState([]);
+  const [isInvitesLoading, setIsInvitesLoading] = useState(false);
   const [showTaskModal, setShowTaskModal] = useState(false);
+  const [showInviteModal, setShowInviteModal] = useState(false);
   const [showEditTaskModal, setShowEditTaskModal] = useState(false);
   const [editingTask, setEditingTask] = useState(null);
   const [showEditBoardModal, setShowEditBoardModal] = useState(false);
@@ -28,6 +40,8 @@ const Dashboard = () => {
     status: 'pending',
     priority: 'medium'
   });
+  const [inviteEmail, setInviteEmail] = useState('');
+  const [isInviting, setIsInviting] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   const normalizeStatus = (status) =>
@@ -37,6 +51,18 @@ const Dashboard = () => {
     tasks.filter((task) => normalizeStatus(task.status) === status).length;
 
   const toggleSidebar = () => setIsSidebarOpen(v => !v);
+
+  const loadInvitations = async () => {
+    try {
+      setIsInvitesLoading(true);
+      const data = await fetchBoardInvitations();
+      setInvitations(data || []);
+    } catch {
+      setInvitations([]);
+    } finally {
+      setIsInvitesLoading(false);
+    }
+  };
 
   // Toggle task status helper: pending -> in-progress -> completed -> pending
   const handleToggleStatus = async (task) => {
@@ -63,6 +89,12 @@ const Dashboard = () => {
       }
     };
     loadBoards();
+  }, []);
+
+  useEffect(() => {
+    loadInvitations();
+    const intervalId = setInterval(loadInvitations, 20000);
+    return () => clearInterval(intervalId);
   }, []);
 
   // Load tasks when board changes
@@ -141,6 +173,38 @@ const Dashboard = () => {
       } catch (err) {
         setError('Failed to delete board');
       }
+    }
+  };
+
+  const handleInviteBoard = async (boardId, email) => {
+    try {
+      setIsInviting(true);
+      await inviteBoardUser(boardId, email);
+      setSuccess(`Invitation sent to ${email}`);
+      setError('');
+      setInviteEmail('');
+      setShowInviteModal(false);
+    } catch (err) {
+      setError(err.message || 'Failed to invite user');
+      setSuccess('');
+    } finally {
+      setIsInviting(false);
+    }
+  };
+
+  const handleInvitationResponse = async (invitationId, action) => {
+    try {
+      await respondToBoardInvitation(invitationId, action);
+      await loadInvitations();
+      if (action === 'accept') {
+        const updatedBoards = await fetchBoards();
+        setBoards(updatedBoards);
+      }
+      setSuccess(action === 'accept' ? 'Invitation accepted' : 'Invitation rejected');
+      setError('');
+    } catch (err) {
+      setError(err.message || 'Failed to respond to invitation');
+      setSuccess('');
     }
   };
 
@@ -239,7 +303,13 @@ const Dashboard = () => {
       />
       
       <div className="dashboard-content">
-        <Navbar onSidebarToggle={toggleSidebar} />
+        <Navbar
+          onSidebarToggle={toggleSidebar}
+          notificationsCount={invitations.length}
+          notifications={invitations}
+          isNotificationsLoading={isInvitesLoading}
+          onRespondInvitation={handleInvitationResponse}
+        />
         
         <Container fluid className="dashboard-container">
           <div className="dashboard-header">
@@ -254,18 +324,33 @@ const Dashboard = () => {
               </button>
               <h1>{activeBoard?.name || 'Select a Board'}</h1>
             </div>
-            <button 
-              className="btn btn-primary"
-              disabled={!activeBoard}
-              onClick={() => setShowTaskModal(true)}
-            >
-              <i className="fas fa-plus me-2"></i>New Task
-            </button>
+            <div className="dashboard-header-actions">
+              <button
+                className="btn btn-secondary"
+                disabled={!activeBoard}
+                onClick={() => setShowInviteModal(true)}
+              >
+                <i className="fas fa-user-plus me-2"></i>Invite User
+              </button>
+              <button 
+                className="btn btn-primary"
+                disabled={!activeBoard}
+                onClick={() => setShowTaskModal(true)}
+              >
+                <i className="fas fa-plus me-2"></i>New Task
+              </button>
+            </div>
           </div>
 
           {error && (
             <Alert variant="danger" onClose={() => setError('')} dismissible>
               {error}
+            </Alert>
+          )}
+
+          {success && (
+            <Alert variant="success" onClose={() => setSuccess('')} dismissible>
+              {success}
             </Alert>
           )}
 
@@ -326,6 +411,47 @@ const Dashboard = () => {
               <h2>📋 Select or Create a Board to Get Started</h2>
             </div>
           )}
+
+          <Modal show={showInviteModal} onHide={() => setShowInviteModal(false)}>
+            <Modal.Header closeButton>
+              <Modal.Title>Invite User to {activeBoard?.name || 'Board'}</Modal.Title>
+            </Modal.Header>
+            <Modal.Body>
+              <Form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  if (!activeBoard?.id || !inviteEmail.trim()) return;
+                  handleInviteBoard(activeBoard.id, inviteEmail.trim());
+                }}
+              >
+                <Form.Group className="mb-3">
+                  <Form.Label>User Email</Form.Label>
+                  <Form.Control
+                    type="email"
+                    placeholder="user@example.com"
+                    value={inviteEmail}
+                    onChange={(e) => setInviteEmail(e.target.value)}
+                    disabled={isInviting}
+                    required
+                  />
+                </Form.Group>
+
+                <div className="d-flex justify-content-end">
+                  <Button
+                    variant="secondary"
+                    className="me-2"
+                    onClick={() => setShowInviteModal(false)}
+                    disabled={isInviting}
+                  >
+                    Cancel
+                  </Button>
+                  <Button variant="primary" type="submit" disabled={!inviteEmail.trim() || isInviting}>
+                    {isInviting ? 'Inviting...' : 'Send Invite'}
+                  </Button>
+                </div>
+              </Form>
+            </Modal.Body>
+          </Modal>
 
           {/* Task Creation Modal */}
           <Modal show={showTaskModal} onHide={() => setShowTaskModal(false)}>

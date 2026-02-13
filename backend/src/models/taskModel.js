@@ -1,17 +1,9 @@
 const pool = require('../config/db');
 
-// Get all tasks (with optional board filtering)
-const getAllTasks = async (userId, boardId = null) => {
+// Get all tasks for a board
+const getAllTasks = async (boardId) => {
   try {
-    let query = 'SELECT * FROM tasks WHERE user_id = ?';
-    const params = [userId];
-    
-    if (boardId) {
-      query += ' AND board_id = ?';
-      params.push(boardId);
-    }
-
-    const [rows] = await pool.query(query, params);
+    const [rows] = await pool.query('SELECT * FROM tasks WHERE board_id = ?', [boardId]);
     return rows;
   } catch (error) {
     console.error("Database error in getAllTasks:", error);

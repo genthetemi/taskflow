@@ -33,7 +33,7 @@ exports.getTasks = async (req, res) => {
       return res.status(404).json({ error: 'Board not found' });
     }
 
-    const tasks = await Task.getAllTasks(req.userId, boardId);
+    const tasks = await Task.getAllTasks(boardId);
     res.status(200).json(tasks);
   } catch (error) {
     console.error("Error fetching tasks:", error.message);
