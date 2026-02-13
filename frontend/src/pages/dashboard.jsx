@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '../context/authContext';
-import { Container, Row, Col, Card, Alert, Modal, Form, Button } from 'react-bootstrap';
+import { Container, Card, Alert, Modal, Form, Button } from 'react-bootstrap';
 import Navbar from '../components/navbar';
 import TaskList from '../components/taskList';
 import Sidebar from '../components/sidebar';
@@ -29,6 +29,12 @@ const Dashboard = () => {
     priority: 'medium'
   });
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+
+  const normalizeStatus = (status) =>
+    String(status || 'pending').trim().toLowerCase().replace(/\s+/g, '-');
+
+  const countByStatus = (status) =>
+    tasks.filter((task) => normalizeStatus(task.status) === status).length;
 
   const toggleSidebar = () => setIsSidebarOpen(v => !v);
 
@@ -265,32 +271,40 @@ const Dashboard = () => {
 
           {activeBoard ? (
             <>
-              <Row className="stats-grid">
-                <Col xl={3} md={6}>
+              <div className="dashboard-stats-grid">
+                <div className="dashboard-stats-item">
                   <StatsCard 
                     title="Total Tasks"
                     value={tasks.length}
                     variant="primary"
                     icon="fa-clipboard-list"
                   />
-                </Col>
-                <Col xl={3} md={6}>
+                </div>
+                <div className="dashboard-stats-item">
                   <StatsCard 
                     title="Pending Tasks"
-                    value={tasks.filter(t => t.status === 'pending').length}
+                    value={countByStatus('pending')}
                     variant="warning"
                     icon="fa-clock"
                   />
-                </Col>
-                <Col xl={3} md={6}>
+                </div>
+                <div className="dashboard-stats-item">
+                  <StatsCard 
+                    title="In Progress Tasks"
+                    value={countByStatus('in-progress')}
+                    variant="info"
+                    icon="fa-spinner"
+                  />
+                </div>
+                <div className="dashboard-stats-item">
                   <StatsCard 
                     title="Completed Tasks"
-                    value={tasks.filter(t => t.status === 'completed').length}
+                    value={countByStatus('completed')}
                     variant="success"
                     icon="fa-check-circle"
                   />
-                </Col>
-              </Row>
+                </div>
+              </div>
 
               <Card className="task-list-card">
                 <Card.Header className="task-list-header">

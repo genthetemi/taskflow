@@ -85,35 +85,6 @@ const Contact = () => {
     }
   ];
 
-  const faqItems = [
-    {
-      question: 'WHAT IS TASKFLOW?',
-      answer: `TaskFlow is a brutalist task management tool designed for teams who value simplicity and clarity. We strip away complexity and focus on what actually matters—getting work done.`
-    },
-    {
-      question: 'HOW MUCH DOES TASKFLOW COST?',
-      answer: `Our pricing is transparent and simple. Start free with unlimited tasks, upgrade to Pro for advanced features at $29/month. No hidden fees, no surprise charges.`
-    },
-    {
-      question: 'CAN I IMPORT MY TASKS?',
-      answer: `Yes! We support imports from most popular task management tools. Just reach out to our support team and we'll help you migrate your data quickly and safely.`
-    },
-    {
-      question: 'IS MY DATA SECURE?',
-      answer: `We take security seriously. All data is encrypted in transit and at rest. We maintain SOC 2 compliance and conduct regular security audits to protect your information.`
-    },
-    {
-      question: 'WHAT ABOUT INTEGRATIONS?',
-      answer: `TaskFlow integrates with Slack, Microsoft Teams, GitHub, GitLab, and more. We're always adding new integrations based on user requests.`
-    },
-    {
-      question: 'IS THERE A FREE TRIAL?',
-      answer: `Absolutely. Sign up for free and get 14 days of full access to all Pro features. No credit card required.`
-    }
-  ];
-
-  const [expandedFaq, setExpandedFaq] = useState(null);
-
   return (
     <div className="contact-container">
       <Navbar />
@@ -235,38 +206,6 @@ const Contact = () => {
                 </div>
               )}
             </form>
-          </div>
-        </div>
-      </section>
-
-      {/* FAQ Section */}
-      <section className="faq-section">
-        <div className="container">
-          <div className="form-header">
-            <h2 className="section-title">FREQUENTLY ASKED</h2>
-            <div className="section-line"></div>
-          </div>
-
-          <div className="faq-grid">
-            {faqItems.map((item, index) => (
-              <div
-                key={index}
-                className={`faq-item ${expandedFaq === index ? 'expanded' : ''}`}
-              >
-                <button
-                  className="faq-question"
-                  onClick={() => setExpandedFaq(expandedFaq === index ? null : index)}
-                >
-                  <span>{item.question}</span>
-                  <span className="faq-toggle">{expandedFaq === index ? '−' : '+'}</span>
-                </button>
-                {expandedFaq === index && (
-                  <div className="faq-answer">
-                    <p>{item.answer}</p>
-                  </div>
-                )}
-              </div>
-            ))}
           </div>
         </div>
       </section>

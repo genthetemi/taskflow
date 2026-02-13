@@ -1,4 +1,5 @@
 const Board = require('../models/boardModel');
+const User = require('../models/userModel');
 
 exports.createBoard = async (req, res) => {
   try {
@@ -100,5 +101,44 @@ exports.deleteBoard = async (req, res) => {
     res.status(200).json({ message: 'Board deleted' });
   } catch (error) {
     res.status(500).json({ error: error.message });
+  }
+};
+
+exports.inviteUserToBoard = async (req, res) => {
+  try {
+    const boardId = Number(req.params.id);
+    const email = String(req.body?.email || '').trim().toLowerCase();
+
+    if (!boardId || !email) {
+      return res.status(400).json({ error: 'Board ID and email are required' });
+    }
+
+    const canManage = await Board.isBoardOwner(boardId, req.userId);
+    if (!canManage) {
+      return res.status(403).json({ error: 'Only board owner can invite users' });
+    }
+
+    const invitedUser = await User.findUserByEmail(email);
+    if (!invitedUser) {
+      return res.status(404).json({ error: 'User not found with this email' });
+    }
+
+    if (invitedUser.id === req.userId) {
+      return res.status(400).json({ error: 'You are already the board owner' });
+    }
+
+    await Board.addBoardMember(boardId, invitedUser.id, req.userId, 'member');
+
+    return res.status(200).json({
+      message: 'User invited to board successfully',
+      board_id: boardId,
+      invited_user: {
+        id: invitedUser.id,
+        email: invitedUser.email
+      }
+    });
+  } catch (error) {
+    console.error('Error inviting user to board:', error);
+    return res.status(500).json({ error: 'Failed to invite user to board' });
   }
 };

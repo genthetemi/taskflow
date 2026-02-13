@@ -69,6 +69,18 @@ const setupDatabase = async () => {
   );
 
   await ensureTable(
+    'CREATE TABLE IF NOT EXISTS board_members (\n' +
+      'id INT AUTO_INCREMENT PRIMARY KEY,\n' +
+      'board_id INT NOT NULL,\n' +
+      'user_id INT NOT NULL,\n' +
+      'role VARCHAR(20) NOT NULL DEFAULT "member",\n' +
+      'created_by INT NOT NULL,\n' +
+      'created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,\n' +
+      'UNIQUE KEY uniq_board_user (board_id, user_id)\n' +
+    ')'
+  );
+
+  await ensureTable(
     'CREATE TABLE IF NOT EXISTS faq_questions (\n' +
       'id INT AUTO_INCREMENT PRIMARY KEY,\n' +
       'user_id INT NULL,\n' +
