@@ -10,9 +10,11 @@ import AdminUsers from './pages/adminUsers';
 import AdminSecurity from './pages/adminSecurity';
 import AdminSettings from './pages/adminSettings';
 import AdminAudit from './pages/adminAudit';
+import AdminFaq from './pages/adminFaq';
 import Home from './pages/home';
 import About from './pages/about';
 import Features from './pages/features';
+import Faq from './pages/faq';
 import Contact from './pages/contact';
 import AdminRoute from './components/adminRoute';
 import 'bootstrap/dist/css/bootstrap.min.css';
@@ -27,6 +29,7 @@ function App() {
           <Route path="/" element={<Home />} />
           <Route path="/about" element={<About />} />
           <Route path="/features" element={<Features />} />
+          <Route path="/faq" element={<Faq />} />
           <Route path="/contact" element={<Contact />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
@@ -58,6 +61,7 @@ function App() {
           >
             <Route index element={<Navigate to="users" replace />} />
             <Route path="users" element={<AdminUsers />} />
+            <Route path="faq" element={<AdminFaq />} />
             <Route path="security" element={<AdminSecurity />} />
             <Route path="settings" element={<AdminSettings />} />
             <Route path="audit" element={<AdminAudit />} />

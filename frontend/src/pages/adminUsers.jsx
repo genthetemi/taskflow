@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import {
+  createAdminUser,
   fetchAdminUsers,
   updateUserDetails,
   deleteUser,
@@ -11,6 +12,15 @@ const AdminUsers = () => {
   const [message, setMessage] = useState('');
   const [showEdit, setShowEdit] = useState(false);
   const [editingUser, setEditingUser] = useState(null);
+  const [showAdd, setShowAdd] = useState(false);
+  const [addForm, setAddForm] = useState({
+    first_name: '',
+    last_name: '',
+    email: '',
+    password: '',
+    role: 'user',
+    status: 'active'
+  });
   const [editForm, setEditForm] = useState({
     first_name: '',
     last_name: '',
@@ -64,9 +74,25 @@ const AdminUsers = () => {
     setShowEdit(true);
   };
 
+  const openAdd = () => {
+    setAddForm({
+      first_name: '',
+      last_name: '',
+      email: '',
+      password: '',
+      role: 'user',
+      status: 'active'
+    });
+    setShowAdd(true);
+  };
+
   const closeEdit = () => {
     setShowEdit(false);
     setEditingUser(null);
+  };
+
+  const closeAdd = () => {
+    setShowAdd(false);
   };
 
   const handleEditSave = async (event) => {
@@ -101,10 +127,50 @@ const AdminUsers = () => {
     }
   };
 
+  const handleAddSave = async (event) => {
+    event.preventDefault();
+
+    const email = String(addForm.email || '').trim();
+    if (!email || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) {
+      setMessage('Please enter a valid email.');
+      return;
+    }
+
+    if (!String(addForm.first_name || '').trim() || !String(addForm.last_name || '').trim()) {
+      setMessage('First and last name are required.');
+      return;
+    }
+
+    if (!String(addForm.password || '').trim() || String(addForm.password || '').length < 8) {
+      setMessage('Password must be at least 8 characters.');
+      return;
+    }
+
+    try {
+      await createAdminUser({
+        first_name: addForm.first_name.trim(),
+        last_name: addForm.last_name.trim(),
+        email,
+        password: addForm.password,
+        role: addForm.role,
+        status: addForm.status
+      });
+      await loadUsers();
+      setMessage('User created successfully.');
+      closeAdd();
+    } catch (error) {
+      const msg = error.response?.data?.error || 'Failed to create user.';
+      setMessage(msg);
+    }
+  };
+
   return (
     <div className="admin-content container">
       <div className="admin-header">
         <h1>User & Access Control</h1>
+        <div className="admin-inline">
+          <button className="btn btn-dark" onClick={openAdd}>Add new user</button>
+        </div>
         {message && <p className="admin-message">{message}</p>}
       </div>
       <div className="table-responsive">
@@ -227,6 +293,82 @@ const AdminUsers = () => {
               <div className="admin-modal-actions">
                 <button type="button" className="btn btn-outline-dark" onClick={closeEdit}>Cancel</button>
                 <button type="submit" className="btn btn-dark">Save changes</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {showAdd && (
+        <div className="admin-modal-backdrop" role="dialog" aria-modal="true">
+          <div className="admin-modal-card">
+            <div className="admin-modal-header">
+              <h2>Add new user</h2>
+              <button className="btn btn-sm btn-outline-dark" onClick={closeAdd}>Close</button>
+            </div>
+            <form onSubmit={handleAddSave}>
+              <div className="admin-modal-grid">
+                <label className="admin-field">
+                  <span>First name</span>
+                  <input
+                    type="text"
+                    value={addForm.first_name}
+                    onChange={(event) => setAddForm(prev => ({ ...prev, first_name: event.target.value }))}
+                    required
+                  />
+                </label>
+                <label className="admin-field">
+                  <span>Last name</span>
+                  <input
+                    type="text"
+                    value={addForm.last_name}
+                    onChange={(event) => setAddForm(prev => ({ ...prev, last_name: event.target.value }))}
+                    required
+                  />
+                </label>
+                <label className="admin-field admin-field-full">
+                  <span>Email</span>
+                  <input
+                    type="email"
+                    value={addForm.email}
+                    onChange={(event) => setAddForm(prev => ({ ...prev, email: event.target.value }))}
+                    required
+                  />
+                </label>
+                <label className="admin-field admin-field-full">
+                  <span>Temporary password</span>
+                  <input
+                    type="password"
+                    value={addForm.password}
+                    onChange={(event) => setAddForm(prev => ({ ...prev, password: event.target.value }))}
+                    required
+                    minLength={8}
+                  />
+                </label>
+                <label className="admin-field">
+                  <span>Role</span>
+                  <select
+                    value={addForm.role}
+                    onChange={(event) => setAddForm(prev => ({ ...prev, role: event.target.value }))}
+                  >
+                    <option value="user">User</option>
+                    <option value="admin">Admin</option>
+                  </select>
+                </label>
+                <label className="admin-field">
+                  <span>Status</span>
+                  <select
+                    value={addForm.status}
+                    onChange={(event) => setAddForm(prev => ({ ...prev, status: event.target.value }))}
+                  >
+                    <option value="active">Active</option>
+                    <option value="disabled">Disabled</option>
+                  </select>
+                </label>
+              </div>
+              <div className="admin-modal-actions">
+                <button type="button" className="btn btn-outline-dark" onClick={closeAdd}>Cancel</button>
+                <button type="submit" className="btn btn-dark">Create user</button>
               </div>
             </form>
           </div>

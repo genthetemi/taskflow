@@ -68,6 +68,21 @@ const setupDatabase = async () => {
     ')'
   );
 
+  await ensureTable(
+    'CREATE TABLE IF NOT EXISTS faq_questions (\n' +
+      'id INT AUTO_INCREMENT PRIMARY KEY,\n' +
+      'user_id INT NULL,\n' +
+      'question TEXT NOT NULL,\n' +
+      'answer TEXT NULL,\n' +
+      'is_published TINYINT(1) NOT NULL DEFAULT 0,\n' +
+      'status VARCHAR(20) NOT NULL DEFAULT "open",\n' +
+      'answered_by INT NULL,\n' +
+      'answered_at DATETIME NULL,\n' +
+      'created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,\n' +
+      'updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP\n' +
+    ')'
+  );
+
   await ensureSetting('defaults', JSON.stringify({
     priority: 'Medium',
     status: 'Pending',

@@ -5,8 +5,8 @@ require('dotenv').config(); // Load environment variables
 const taskRoutes = require('./src/routes/taskRoutes'); // Ensure this path is correct
 const boardRoutes = require('./src/routes/boardRoutes');
 const adminRoutes = require('./src/routes/adminRoutes');
+const faqRoutes = require('./src/routes/faqRoutes');
 const contactRoutes = require('./src/routes/contactRoutes');
-
 const authRoutes = require('./src/routes/authRoutes');
 const swaggerUI = require('swagger-ui-express');
 const swaggerSpec = require('./swagger-config');
@@ -25,6 +25,7 @@ app.use(express.json());
 app.use('/api/auth', authRoutes);
 app.use('/api/boards', boardRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/faq', faqRoutes);
 app.use('/api/contact', contactRoutes);
 
 // Documentation endpoint

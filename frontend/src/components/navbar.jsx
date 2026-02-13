@@ -52,6 +52,9 @@ const Navbar = ({ onSidebarToggle }) => {
             <li className="nav-item">
               <Link className="nav-link" to="/contact" onClick={() => setOpen(false)}>CONTACT</Link>
             </li>
+            <li className="nav-item">
+              <Link className="nav-link" to="/faq" onClick={() => setOpen(false)}>FAQ</Link>
+            </li>
             {user?.role !== 'admin' && (
               <li className="nav-item">
                 <Link className="nav-link" to="/dashboard" onClick={() => setOpen(false)}>DASHBOARD</Link>

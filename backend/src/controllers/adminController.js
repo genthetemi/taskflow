@@ -1,4 +1,6 @@
 const Admin = require('../models/adminModel');
+const User = require('../models/userModel');
+const Faq = require('../models/faqModel');
 
 const listUsers = async (req, res) => {
   try {
@@ -6,6 +8,74 @@ const listUsers = async (req, res) => {
     res.json(users);
   } catch (error) {
     res.status(500).json({ error: 'Failed to load users' });
+  }
+};
+
+const createUser = async (req, res) => {
+  try {
+    const { first_name, last_name, email, password, role, status } = req.body || {};
+
+    if (!first_name || !String(first_name).trim() || !last_name || !String(last_name).trim()) {
+      return res.status(400).json({ error: 'First and last name are required' });
+    }
+
+    const emailStr = String(email || '').trim();
+    if (!emailStr || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(emailStr)) {
+      return res.status(400).json({ error: 'Valid email is required' });
+    }
+
+    if (!password || String(password).length < 8) {
+      return res.status(400).json({ error: 'Password must be at least 8 characters' });
+    }
+
+    const roleValue = role || 'user';
+    if (!['user', 'admin'].includes(roleValue)) {
+      return res.status(400).json({ error: 'Invalid role' });
+    }
+
+    const statusValue = status || 'active';
+    if (!['active', 'disabled'].includes(statusValue)) {
+      return res.status(400).json({ error: 'Invalid status' });
+    }
+
+    const existing = await User.findUserByEmail(emailStr);
+    if (existing) {
+      return res.status(400).json({ error: 'Email already in use' });
+    }
+
+    const result = await Admin.createUser({
+      email: emailStr,
+      password: String(password),
+      first_name: String(first_name).trim(),
+      last_name: String(last_name).trim(),
+      role: roleValue,
+      status: statusValue
+    });
+
+    await Admin.addAuditLog({
+      actorUserId: req.userId,
+      action: 'user_create',
+      details: { userId: result.insertId, role: roleValue, status: statusValue },
+      ip: req.ip,
+      userAgent: req.headers['user-agent']
+    });
+
+    res.status(201).json({
+      message: 'User created',
+      user: {
+        id: result.insertId,
+        email: emailStr,
+        first_name: String(first_name).trim(),
+        last_name: String(last_name).trim(),
+        role: roleValue,
+        status: statusValue
+      }
+    });
+  } catch (error) {
+    if (error.code === 'ER_DUP_ENTRY') {
+      return res.status(400).json({ error: 'Email already in use' });
+    }
+    res.status(500).json({ error: 'Failed to create user' });
   }
 };
 
@@ -266,7 +336,97 @@ const deleteIpRule = async (req, res) => {
   }
 };
 
+const listFaqQuestions = async (req, res) => {
+  try {
+    const status = req.query.status;
+    const questions = await Faq.listQuestions({ status });
+    res.json(questions);
+  } catch (error) {
+    console.error('Error loading FAQ questions:', error.message || error);
+    res.status(500).json({ error: 'Failed to load FAQ questions', details: error.message });
+  }
+};
+
+const updateFaqQuestion = async (req, res) => {
+  try {
+    const questionId = Number(req.params.id);
+    if (!questionId) {
+      return res.status(400).json({ error: 'Invalid question id' });
+    }
+
+    const current = await Faq.getQuestionById(questionId);
+    if (!current) {
+      return res.status(404).json({ error: 'Question not found' });
+    }
+
+    const { answer, is_published, status } = req.body || {};
+    const updates = {};
+
+    if (answer !== undefined) {
+      const answerText = String(answer || '').trim();
+      if (!answerText) {
+        return res.status(400).json({ error: 'Answer is required' });
+      }
+      updates.answer = answerText;
+      updates.answered_by = req.userId;
+      updates.answered_at = new Date();
+      if (status === undefined) {
+        updates.status = 'answered';
+      }
+    }
+
+    if (status !== undefined) {
+      if (!['open', 'answered', 'closed'].includes(status)) {
+        return res.status(400).json({ error: 'Invalid status' });
+      }
+      updates.status = status;
+    }
+
+    if (is_published !== undefined) {
+      const publish =
+        is_published === true ||
+        is_published === 'true' ||
+        is_published === 1 ||
+        is_published === '1';
+      const unpublish =
+        is_published === false ||
+        is_published === 'false' ||
+        is_published === 0 ||
+        is_published === '0';
+
+      if (!publish && !unpublish) {
+        return res.status(400).json({ error: 'Invalid publish flag' });
+      }
+
+      const nextPublishValue = publish ? 1 : 0;
+      const nextAnswer = updates.answer !== undefined ? updates.answer : current.answer;
+      if (nextPublishValue === 1 && !nextAnswer) {
+        return res.status(400).json({ error: 'Answer required before publishing' });
+      }
+      updates.is_published = nextPublishValue;
+    }
+
+    if (!Object.keys(updates).length) {
+      return res.status(400).json({ error: 'No valid fields provided' });
+    }
+
+    await Faq.updateQuestion(questionId, updates);
+    await Admin.addAuditLog({
+      actorUserId: req.userId,
+      action: 'faq_update',
+      details: { questionId, updates },
+      ip: req.ip,
+      userAgent: req.headers['user-agent']
+    });
+
+    res.json({ message: 'FAQ updated' });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to update FAQ' });
+  }
+};
+
 module.exports = {
+  createUser,
   listUsers,
   updateUserDetails,
   updateUserRole,
@@ -278,5 +438,7 @@ module.exports = {
   updateSettings,
   listIpRules,
   addIpRule,
-  deleteIpRule
+  deleteIpRule,
+  listFaqQuestions,
+  updateFaqQuestion
 };
