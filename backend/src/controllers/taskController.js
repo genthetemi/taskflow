@@ -1,6 +1,25 @@
 const Task = require('../models/taskModel');
 const pool = require('../config/db'); // Add this import
 
+const hasBoardAccess = async (boardId, userId) => {
+  const [board] = await pool.query(
+    `SELECT id
+     FROM boards
+     WHERE id = ?
+       AND (
+         user_id = ?
+         OR EXISTS (
+           SELECT 1 FROM board_members
+           WHERE board_id = boards.id AND user_id = ?
+         )
+       )
+     LIMIT 1`,
+    [boardId, userId, userId]
+  );
+
+  return board.length > 0;
+};
+
 exports.getTasks = async (req, res) => {
   try {
     const boardId = req.query.board_id;
@@ -9,13 +28,8 @@ exports.getTasks = async (req, res) => {
       return res.status(400).json({ error: 'Board ID is required' });
     }
 
-    // Verify board belongs to user
-    const [board] = await pool.query(
-      'SELECT id FROM boards WHERE id = ? AND user_id = ?',
-      [boardId, req.userId]
-    );
-
-    if (!board.length) {
+    const canAccessBoard = await hasBoardAccess(boardId, req.userId);
+    if (!canAccessBoard) {
       return res.status(404).json({ error: 'Board not found' });
     }
 
@@ -36,13 +50,9 @@ exports.addTask = async (req, res) => {
       });
     }
 
-    // Verify board exists and belongs to user
-    const [board] = await pool.query(
-      'SELECT id FROM boards WHERE id = ? AND user_id = ?',
-      [req.body.board_id, req.userId]
-    );
-    
-    if (!board.length) {
+    const canAccessBoard = await hasBoardAccess(req.body.board_id, req.userId);
+
+    if (!canAccessBoard) {
       return res.status(404).json({ 
         error: 'Board not found or unauthorized' 
       });
@@ -96,18 +106,37 @@ exports.addTask = async (req, res) => {
 
 exports.updateTask = async (req, res) => {
   try {
-    // Validate task exists and belongs to user
     const [existingTask] = await pool.query(
-      'SELECT user_id FROM tasks WHERE id = ?',
-      [req.params.id]
+      `SELECT t.user_id,
+              t.board_id,
+              b.user_id AS board_owner_id,
+              EXISTS (
+                SELECT 1 FROM board_members bm
+                WHERE bm.board_id = t.board_id AND bm.user_id = ?
+              ) AS is_board_member
+       FROM tasks t
+       JOIN boards b ON b.id = t.board_id
+       WHERE t.id = ?`,
+      [req.userId, req.params.id]
     );
     
     if (!existingTask.length) {
       return res.status(404).json({ error: 'Task not found' });
     }
 
-    if (existingTask[0].user_id !== req.userId) {
+    const isTaskOwner = existingTask[0].user_id === req.userId;
+    const isBoardOwner = existingTask[0].board_owner_id === req.userId;
+    const isBoardMember = Number(existingTask[0].is_board_member) === 1;
+
+    if (!isTaskOwner && !isBoardOwner && !isBoardMember) {
       return res.status(403).json({ error: 'Unauthorized' });
+    }
+
+    if (req.body.board_id) {
+      const canAccessTargetBoard = await hasBoardAccess(req.body.board_id, req.userId);
+      if (!canAccessTargetBoard) {
+        return res.status(403).json({ error: 'Cannot move task to unauthorized board' });
+      }
     }
 
     // Validate and normalize status if provided
@@ -154,17 +183,29 @@ exports.updateTask = async (req, res) => {
 
 exports.deleteTask = async (req, res) => {
   try {
-    // Validate task exists and belongs to user
     const [existingTask] = await pool.query(
-      'SELECT user_id FROM tasks WHERE id = ?',
-      [req.params.id]
+      `SELECT t.user_id,
+              t.board_id,
+              b.user_id AS board_owner_id,
+              EXISTS (
+                SELECT 1 FROM board_members bm
+                WHERE bm.board_id = t.board_id AND bm.user_id = ?
+              ) AS is_board_member
+       FROM tasks t
+       JOIN boards b ON b.id = t.board_id
+       WHERE t.id = ?`,
+      [req.userId, req.params.id]
     );
     
     if (!existingTask.length) {
       return res.status(404).json({ error: 'Task not found' });
     }
 
-    if (existingTask[0].user_id !== req.userId) {
+    const isTaskOwner = existingTask[0].user_id === req.userId;
+    const isBoardOwner = existingTask[0].board_owner_id === req.userId;
+    const isBoardMember = Number(existingTask[0].is_board_member) === 1;
+
+    if (!isTaskOwner && !isBoardOwner && !isBoardMember) {
       return res.status(403).json({ error: 'Unauthorized' });
     }
 

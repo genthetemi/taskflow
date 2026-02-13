@@ -1,5 +1,5 @@
 // features.jsx - LIGHT BRUTALIST
-import React, { useState } from 'react';
+import React from 'react';
 import { Link } from 'react-router-dom';
 import Navbar from '../components/navbar';
 import { 
@@ -71,28 +71,7 @@ const integrations = [
   { name: 'API', icon: <TbApi /> }
 ];
 
-const faq = [
-  { 
-    q: 'Can I invite team members?', 
-    a: 'Yes, invite unlimited team members with role-based permissions. Share via email or link.'
-  },
-  { 
-    q: 'Does it integrate with other tools?', 
-    a: 'Yes, native integrations with 20+ tools plus webhook support and custom API.'
-  },
-  { 
-    q: 'Is there offline support?', 
-    a: 'Yes, work offline and sync automatically when you reconnect.'
-  },
-  { 
-    q: 'How secure is my data?', 
-    a: 'AES-256 encryption, TLS 1.3, regular security audits, and compliance with privacy standards.'
-  }
-];
-
 const Features = () => {
-  const [openFaq, setOpenFaq] = useState(null);
-
   return (
     <div className="features-simple">
       <Navbar />
@@ -154,34 +133,6 @@ const Features = () => {
                   {integration.icon}
                 </span>
                 {integration.name}
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* FAQ */}
-      <section className="faq">
-        <div className="container">
-          <h2 className="section-title text-center mb-5">FAQ</h2>
-          <div className="faq-list">
-            {faq.map((item, idx) => (
-              <div key={idx} className="faq-item">
-                <button 
-                  className="faq-q" 
-                  onClick={() => setOpenFaq(openFaq === idx ? null : idx)}
-                  aria-expanded={openFaq === idx}
-                >
-                  {item.q}
-                  <span className="chev">
-                    {openFaq === idx ? '−' : '+'}
-                  </span>
-                </button>
-                {openFaq === idx && (
-                  <div className="faq-a">
-                    {item.a}
-                  </div>
-                )}
               </div>
             ))}
           </div>

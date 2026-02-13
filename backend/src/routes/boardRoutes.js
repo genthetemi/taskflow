@@ -6,7 +6,8 @@ const {
   getBoards,
   getBoard,
   updateBoard,
-  deleteBoard
+  deleteBoard,
+  inviteUserToBoard
 } = require('../controllers/boardController');
 const { authenticate } = require('../middleware/authMiddleware');
 
@@ -17,6 +18,7 @@ router.get('/', getBoards);
 router.get('/:id', getBoard);
 router.put('/:id', updateBoard);
 router.delete('/:id', deleteBoard);
+router.post('/:id/invite', inviteUserToBoard);
 
 module.exports = router;
 
