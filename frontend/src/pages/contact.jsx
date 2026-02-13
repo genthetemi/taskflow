@@ -69,19 +69,19 @@ const Contact = () => {
     {
       icon: <FiMail />,
       title: 'EMAIL',
-      content: 'hello@taskflow.io',
-      link: 'mailto:hello@taskflow.io'
+      content: 'info@taskflow.io',
+      link: 'mailto:info@taskflow.io'
     },
     {
       icon: <FiPhone />,
       title: 'PHONE',
-      content: '+1 (555) 123-4567',
-      link: 'tel:+15551234567'
+      content: '+383 46 121 768',
+      link: 'tel:+38346121768'
     },
     {
       icon: <FiMapPin />,
       title: 'OFFICE',
-      content: '123 Work Street, San Francisco, CA 94105'
+      content: 'Prishtina, Kosovo',
     }
   ];
 
