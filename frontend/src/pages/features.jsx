@@ -11,7 +11,9 @@ import {
   FiShield,
   FiChevronRight,
   FiCheck,
-  FiArrowRight
+  FiArrowRight,
+  FiZap,
+  FiClock
 } from 'react-icons/fi';
 import { 
   TbBrandSlack,
@@ -59,6 +61,18 @@ const features = [
     icon: <FiShield />, 
     text: 'Enterprise-grade encryption, role-based permissions, and compliance standards.',
     color: '#3e3eff'
+  },
+  { 
+    title: 'Smart Automation', 
+    icon: <FiZap />, 
+    text: 'Automate repetitive tasks with workflow rules. Set triggers, actions, and notifications.',
+    color: '#000000'
+  },
+  { 
+    title: 'Time Tracking', 
+    icon: <FiClock />, 
+    text: 'Track time spent on tasks, generate timesheet reports, and analyze team capacity.',
+    color: '#ff3e3e'
   }
 ];
 
