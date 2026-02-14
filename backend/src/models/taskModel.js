@@ -1,17 +1,16 @@
 const pool = require('../config/db');
 
-// Get all tasks (with optional board filtering)
-const getAllTasks = async (userId, boardId = null) => {
+// Get all tasks for a board
+const getAllTasks = async (boardId) => {
   try {
-    let query = 'SELECT * FROM tasks WHERE user_id = ?';
-    const params = [userId];
-    
-    if (boardId) {
-      query += ' AND board_id = ?';
-      params.push(boardId);
-    }
-
-    const [rows] = await pool.query(query, params);
+    const [rows] = await pool.query(
+      `SELECT t.*, creator.email AS creator_email, assignee.email AS assignee_email
+       FROM tasks t
+       LEFT JOIN users creator ON creator.id = t.user_id
+       LEFT JOIN users assignee ON assignee.id = t.assignee_user_id
+       WHERE t.board_id = ?`,
+      [boardId]
+    );
     return rows;
   } catch (error) {
     console.error("Database error in getAllTasks:", error);
@@ -21,7 +20,7 @@ const getAllTasks = async (userId, boardId = null) => {
 
 // Create a new task with board association
 const createTask = async (task, userId) => {
-  const { title, description, status, priority, due_date, board_id } = task;
+  const { title, description, status, priority, due_date, board_id, assignee_user_id } = task;
 
   if (!board_id) {
     throw new Error('Board ID is required');
@@ -30,8 +29,8 @@ const createTask = async (task, userId) => {
   try {
     const [result] = await pool.query(
       `INSERT INTO tasks 
-       (title, description, status, priority, user_id, board_id, due_date) 
-       VALUES (?, ?, ?, ?, ?, ?, ?)`,
+       (title, description, status, priority, user_id, board_id, due_date, assignee_user_id) 
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         title,
         description || null,
@@ -39,7 +38,8 @@ const createTask = async (task, userId) => {
         priority || 'Medium',
         userId,
         board_id,
-        due_date || null
+        due_date || null,
+        assignee_user_id ?? null
       ]
     );
     return result;
@@ -53,7 +53,7 @@ const createTask = async (task, userId) => {
 const updateTask = async (id, task) => {
   try {
     // Build dynamic SET clause for only provided fields
-    const allowedFields = ['title', 'description', 'status', 'priority', 'due_date', 'board_id'];
+    const allowedFields = ['title', 'description', 'status', 'priority', 'due_date', 'board_id', 'assignee_user_id'];
     const setClauses = [];
     const params = [];
 

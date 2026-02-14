@@ -34,6 +34,7 @@ const setupDatabase = async () => {
   await ensureColumn('users', 'last_login_ip', '`last_login_ip` VARCHAR(45) NULL');
   await ensureColumn('users', 'last_login_at', '`last_login_at` DATETIME NULL');
   await ensureColumn('users', 'last_login_user_agent', '`last_login_user_agent` VARCHAR(255) NULL');
+  await ensureColumn('tasks', 'assignee_user_id', '`assignee_user_id` INT NULL');
 
   await ensureTable(
     'CREATE TABLE IF NOT EXISTS audit_logs (\n' +
@@ -77,6 +78,19 @@ const setupDatabase = async () => {
       'created_by INT NOT NULL,\n' +
       'created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,\n' +
       'UNIQUE KEY uniq_board_user (board_id, user_id)\n' +
+    ')'
+  );
+
+  await ensureTable(
+    'CREATE TABLE IF NOT EXISTS board_invitations (\n' +
+      'id INT AUTO_INCREMENT PRIMARY KEY,\n' +
+      'board_id INT NOT NULL,\n' +
+      'inviter_user_id INT NOT NULL,\n' +
+      'invitee_user_id INT NOT NULL,\n' +
+      'status VARCHAR(20) NOT NULL DEFAULT "pending",\n' +
+      'responded_at DATETIME NULL,\n' +
+      'created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,\n' +
+      'UNIQUE KEY uniq_board_invitee (board_id, invitee_user_id)\n' +
     ')'
   );
 

@@ -159,6 +159,12 @@
   min-height: 22px;
 }
 
+.dashboard-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
 /* Buttons */
 .dashboard-wrapper .btn {
   border: var(--brutal-border) solid !important;
@@ -284,6 +290,43 @@
   background: var(--brutal-white);
   border: 2px solid var(--brutal-black);
   margin-bottom: 2rem;
+}
+
+.invite-notifications-card {
+  background: var(--brutal-white);
+  border: 2px solid var(--brutal-black);
+}
+
+.invite-notifications-header {
+  border-bottom: 2px solid var(--brutal-black);
+  background: var(--brutal-gray);
+  padding: 0.9rem 1.2rem;
+}
+
+.invite-notifications-header h3 {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.invite-notification-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.75rem 0;
+  border-bottom: 1px solid #ddd;
+}
+
+.invite-notification-item:last-child {
+  border-bottom: none;
+}
+
+.invite-notification-actions {
+  display: flex;
+  gap: 0.5rem;
 }
 
 .task-list-header {

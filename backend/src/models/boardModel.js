@@ -51,6 +51,68 @@ const addBoardMember = async (boardId, memberUserId, createdBy, role = 'member')
   return result;
 };
 
+const isBoardMember = async (boardId, userId) => {
+  const [rows] = await pool.query(
+    'SELECT id FROM board_members WHERE board_id = ? AND user_id = ? LIMIT 1',
+    [boardId, userId]
+  );
+  return rows.length > 0;
+};
+
+const createBoardInvitation = async (boardId, inviterUserId, inviteeUserId) => {
+  const [result] = await pool.query(
+    `INSERT INTO board_invitations (board_id, inviter_user_id, invitee_user_id, status, responded_at)
+     VALUES (?, ?, ?, 'pending', NULL)
+     ON DUPLICATE KEY UPDATE
+       inviter_user_id = VALUES(inviter_user_id),
+       status = 'pending',
+       responded_at = NULL,
+       created_at = CURRENT_TIMESTAMP`,
+    [boardId, inviterUserId, inviteeUserId]
+  );
+  return result;
+};
+
+const getPendingInvitationsForUser = async (userId) => {
+  const [rows] = await pool.query(
+    `SELECT bi.id,
+            bi.board_id,
+            bi.inviter_user_id,
+            bi.created_at,
+            b.name AS board_name,
+            b.description AS board_description,
+            u.email AS inviter_email
+     FROM board_invitations bi
+     JOIN boards b ON b.id = bi.board_id
+     JOIN users u ON u.id = bi.inviter_user_id
+     WHERE bi.invitee_user_id = ? AND bi.status = 'pending'
+     ORDER BY bi.created_at DESC`,
+    [userId]
+  );
+  return rows;
+};
+
+const getInvitationForUser = async (invitationId, userId) => {
+  const [rows] = await pool.query(
+    `SELECT bi.*,
+            b.name AS board_name
+     FROM board_invitations bi
+     JOIN boards b ON b.id = bi.board_id
+     WHERE bi.id = ? AND bi.invitee_user_id = ?
+     LIMIT 1`,
+    [invitationId, userId]
+  );
+  return rows[0];
+};
+
+const respondToInvitation = async (invitationId, status) => {
+  const [result] = await pool.query(
+    'UPDATE board_invitations SET status = ?, responded_at = NOW() WHERE id = ?',
+    [status, invitationId]
+  );
+  return result;
+};
+
 const getBoardById = async (id, userId) => {
   try {
     const [rows] = await pool.query(
@@ -121,6 +183,7 @@ const updateBoard = async (id, board) => {
 
 const deleteBoard = async (id) => {
   try {
+    await pool.query('DELETE FROM board_invitations WHERE board_id = ?', [id]);
     await pool.query('DELETE FROM board_members WHERE board_id = ?', [id]);
     await pool.query('DELETE FROM tasks WHERE board_id = ?', [id]);
     const [result] = await pool.query('DELETE FROM boards WHERE id = ?', [id]);
@@ -136,6 +199,11 @@ module.exports = {
   isBoardOwner,
   hasBoardAccess,
   addBoardMember,
+  isBoardMember,
+  createBoardInvitation,
+  getPendingInvitationsForUser,
+  getInvitationForUser,
+  respondToInvitation,
   getBoardById,
   getAllBoards,
   updateBoard,

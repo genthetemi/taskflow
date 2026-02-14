@@ -20,6 +20,49 @@ const hasBoardAccess = async (boardId, userId) => {
   return board.length > 0;
 };
 
+const isBoardOwner = async (boardId, userId) => {
+  const [rows] = await pool.query(
+    'SELECT id FROM boards WHERE id = ? AND user_id = ? LIMIT 1',
+    [boardId, userId]
+  );
+  return rows.length > 0;
+};
+
+const isUserInBoard = async (boardId, userId) => {
+  const [rows] = await pool.query(
+    `SELECT b.id
+     FROM boards b
+     WHERE b.id = ?
+       AND (
+         b.user_id = ?
+         OR EXISTS (
+           SELECT 1 FROM board_members bm
+           WHERE bm.board_id = b.id AND bm.user_id = ?
+         )
+       )
+     LIMIT 1`,
+    [boardId, userId, userId]
+  );
+  return rows.length > 0;
+};
+
+const parseAssignee = (value) => {
+  if (value === undefined) {
+    return { provided: false, value: undefined };
+  }
+
+  if (value === null || value === '') {
+    return { provided: true, value: null };
+  }
+
+  const assigneeId = Number(value);
+  if (!Number.isInteger(assigneeId) || assigneeId <= 0) {
+    throw new Error('Invalid assignee_user_id');
+  }
+
+  return { provided: true, value: assigneeId };
+};
+
 exports.getTasks = async (req, res) => {
   try {
     const boardId = req.query.board_id;
@@ -33,7 +76,7 @@ exports.getTasks = async (req, res) => {
       return res.status(404).json({ error: 'Board not found' });
     }
 
-    const tasks = await Task.getAllTasks(req.userId, boardId);
+    const tasks = await Task.getAllTasks(boardId);
     res.status(200).json(tasks);
   } catch (error) {
     console.error("Error fetching tasks:", error.message);
@@ -56,6 +99,34 @@ exports.addTask = async (req, res) => {
       return res.status(404).json({ 
         error: 'Board not found or unauthorized' 
       });
+    }
+
+    const boardOwner = await isBoardOwner(req.body.board_id, req.userId);
+
+    let assignee;
+    try {
+      assignee = parseAssignee(req.body.assignee_user_id);
+    } catch (parseError) {
+      return res.status(400).json({ error: parseError.message });
+    }
+
+    if (assignee.provided) {
+      if (assignee.value === null) {
+        req.body.assignee_user_id = null;
+      } else {
+        const assigneeInBoard = await isUserInBoard(req.body.board_id, assignee.value);
+        if (!assigneeInBoard) {
+          return res.status(400).json({ error: 'Assignee must be a user on this board' });
+        }
+
+        if (!boardOwner && assignee.value !== req.userId) {
+          return res.status(403).json({ error: 'Board members can only assign tasks to themselves' });
+        }
+
+        req.body.assignee_user_id = assignee.value;
+      }
+    } else {
+      req.body.assignee_user_id = null;
     }
 
     // Validate and normalize status if provided
@@ -108,6 +179,7 @@ exports.updateTask = async (req, res) => {
   try {
     const [existingTask] = await pool.query(
       `SELECT t.user_id,
+              t.assignee_user_id,
               t.board_id,
               b.user_id AS board_owner_id,
               EXISTS (
@@ -127,15 +199,59 @@ exports.updateTask = async (req, res) => {
     const isTaskOwner = existingTask[0].user_id === req.userId;
     const isBoardOwner = existingTask[0].board_owner_id === req.userId;
     const isBoardMember = Number(existingTask[0].is_board_member) === 1;
+    const currentAssignee = existingTask[0].assignee_user_id === null
+      ? null
+      : Number(existingTask[0].assignee_user_id);
 
     if (!isTaskOwner && !isBoardOwner && !isBoardMember) {
       return res.status(403).json({ error: 'Unauthorized' });
     }
 
+    const targetBoardId = req.body.board_id ? Number(req.body.board_id) : Number(existingTask[0].board_id);
+
     if (req.body.board_id) {
       const canAccessTargetBoard = await hasBoardAccess(req.body.board_id, req.userId);
       if (!canAccessTargetBoard) {
         return res.status(403).json({ error: 'Cannot move task to unauthorized board' });
+      }
+    }
+
+    let assignee;
+    try {
+      assignee = parseAssignee(req.body.assignee_user_id);
+    } catch (parseError) {
+      return res.status(400).json({ error: parseError.message });
+    }
+
+    if (assignee.provided) {
+      if (!isBoardOwner) {
+        if (assignee.value === null) {
+          return res.status(403).json({ error: 'Only board owner can unassign tasks' });
+        }
+
+        if (currentAssignee !== null) {
+          return res.status(409).json({ error: 'Task is already assigned' });
+        }
+
+        if (assignee.value !== req.userId) {
+          return res.status(403).json({ error: 'Board members can only assign unassigned tasks to themselves' });
+        }
+      }
+
+      if (assignee.value !== null) {
+        const assigneeInBoard = await isUserInBoard(targetBoardId, assignee.value);
+        if (!assigneeInBoard) {
+          return res.status(400).json({ error: 'Assignee must be a user on the target board' });
+        }
+      }
+
+      req.body.assignee_user_id = assignee.value;
+    }
+
+    if (req.body.board_id && !assignee.provided && currentAssignee !== null) {
+      const assigneeStillInBoard = await isUserInBoard(targetBoardId, currentAssignee);
+      if (!assigneeStillInBoard) {
+        return res.status(400).json({ error: 'Current assignee is not part of target board' });
       }
     }
 
