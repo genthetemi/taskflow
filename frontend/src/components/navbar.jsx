@@ -80,16 +80,14 @@ const Navbar = ({
               <>
                 {
                   <button
-                    className="btn btn-outline-primary me-2 navbar-notifications-btn"
+                    className={`me-2 navbar-notifications-btn ${showNotificationsDropdown ? 'is-open' : ''}`}
                     onClick={() => setShowNotificationsDropdown((v) => !v)}
                     type="button"
                     aria-label="Open notifications"
+                    aria-expanded={showNotificationsDropdown}
                     title="Notifications"
                   >
                     <i className="fas fa-bell"></i>
-                    {notificationsCount > 0 && (
-                      <span className="navbar-notification-badge">{notificationsCount}</span>
-                    )}
                   </button>
                 }
                 {showNotificationsDropdown && (
@@ -126,7 +124,6 @@ const Navbar = ({
                     )}
                   </div>
                 )}
-                <span className="nav-link welcome-text me-3">Welcome, {user.email}</span>
                 <button className="btn btn-danger" onClick={logout}>LOGOUT</button>
               </>
             ) : (

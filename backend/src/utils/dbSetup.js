@@ -34,6 +34,7 @@ const setupDatabase = async () => {
   await ensureColumn('users', 'last_login_ip', '`last_login_ip` VARCHAR(45) NULL');
   await ensureColumn('users', 'last_login_at', '`last_login_at` DATETIME NULL');
   await ensureColumn('users', 'last_login_user_agent', '`last_login_user_agent` VARCHAR(255) NULL');
+  await ensureColumn('tasks', 'assignee_user_id', '`assignee_user_id` INT NULL');
 
   await ensureTable(
     'CREATE TABLE IF NOT EXISTS audit_logs (\n' +

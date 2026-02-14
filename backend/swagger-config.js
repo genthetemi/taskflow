@@ -65,7 +65,16 @@ const options = {
               enum: ['pending', 'in-progress', 'completed'],
               default: 'pending'
             },
-            user_id: { type: 'integer', example: 1 }
+            priority: {
+              type: 'string',
+              enum: ['low', 'medium', 'high'],
+              default: 'medium'
+            },
+            board_id: { type: 'integer', example: 3 },
+            due_date: { type: 'string', format: 'date-time', nullable: true },
+            user_id: { type: 'integer', example: 1, description: 'Task creator user id' },
+            assignee_user_id: { type: 'integer', nullable: true, example: 2 },
+            assignee_email: { type: 'string', nullable: true, example: 'member@example.com' }
           }
         },
         User: {
@@ -80,7 +89,11 @@ const options = {
     },
     tags: [
       { name: 'Authentication', description: 'User registration and login' },
-      { name: 'Tasks', description: 'Task management operations' }
+      { name: 'Tasks', description: 'Task management operations' },
+      { name: 'Boards', description: 'Board management and invitations' },
+      { name: 'Admin', description: 'Administrative operations' },
+      { name: 'FAQ', description: 'FAQ and user questions' },
+      { name: 'Contact', description: 'Contact form messaging' }
     ]
   },
   apis: ['./src/routes/*.js']

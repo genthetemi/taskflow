@@ -48,10 +48,11 @@
 }
 
 .navbar-nav .nav-link.active-link {
-    color: var(--brutal-white) !important;
-    background: var(--brutal-black);
-    border: 2px solid var(--brutal-black);
-    box-shadow: 3px 3px 0px 0px var(--brutal-red);
+    color: var(--brutal-red) !important;
+}
+
+.navbar-nav .nav-link:active {
+    color: var(--brutal-red) !important;
 }
 
 .navbar-nav .nav-link::after {
@@ -67,6 +68,11 @@
 }
 
 .navbar-nav .nav-link:hover::after {
+    transform: scaleX(1);
+}
+
+.navbar-nav .nav-link.active-link::after,
+.navbar-nav .nav-link:active::after {
     transform: scaleX(1);
 }
 
@@ -119,48 +125,40 @@
     box-shadow: 0 0 0 3px rgba(255, 46, 46, 0.25) !important;
 }
 
-/* User Welcome Text */
-.navbar .nav-link.welcome-text {
-    color: var(--brutal-black) !important;
-    font-weight: 600;
-    text-transform: none;
-}
-
 .navbar-notifications-btn {
     position: relative;
-    min-width: 52px;
+    width: auto;
+    height: auto;
+    padding: 0 !important;
+    border: none !important;
+    border-radius: 0 !important;
+    background: transparent !important;
+    color: var(--brutal-black) !important;
+    box-shadow: none !important;
     display: inline-flex;
     align-items: center;
     justify-content: center;
+    cursor: pointer;
+    transition: color 0.2s ease !important;
 }
 
-.navbar .d-flex {
-    position: relative;
-}
-
-.navbar-notification-badge {
-    position: absolute;
-    top: -8px;
-    right: -8px;
-    min-width: 22px;
-    height: 22px;
-    padding: 0 6px;
-    border: 2px solid var(--brutal-black);
-    background: var(--brutal-red);
-    color: var(--brutal-white);
-    border-radius: 999px;
-    font-size: 0.72rem;
-    font-weight: 800;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
+.navbar-notifications-btn i {
+    font-size: 1.2rem;
     line-height: 1;
+    display: block;
+}
+
+.navbar-notifications-btn:hover,
+.navbar-notifications-btn.is-open {
+    transform: none !important;
+    background: transparent !important;
+    color: var(--brutal-red) !important;
 }
 
 .navbar-notifications-dropdown {
     position: absolute;
     top: calc(100% + 0.5rem);
-    right: 7.5rem;
+    right: 0;
     width: min(460px, 92vw);
     max-height: 70vh;
     overflow-y: auto;

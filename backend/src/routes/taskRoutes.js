@@ -45,12 +45,26 @@ module.exports = router;
 
 /**
  * @swagger
+ * tags:
+ *   name: Tasks
+ *   description: Task management operations
+ */
+
+/**
+ * @swagger
  * /api/tasks:
  *   get:
- *     summary: Get all user's tasks
+ *     summary: Get all tasks for a board
  *     tags: [Tasks]
  *     security:
  *       - BearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: board_id
+ *         schema:
+ *           type: integer
+ *         required: true
+ *         description: Board ID
  *     responses:
  *       200:
  *         description: List of tasks
@@ -62,11 +76,13 @@ module.exports = router;
  *                 $ref: '#/components/schemas/Task'
  *       401:
  *         description: Unauthorized
+ *       404:
+ *         description: Board not found
  *       500:
  *         description: Server error
  * 
  *   post:
- *     summary: Create a new task
+ *     summary: Create a new task in a board
  *     tags: [Tasks]
  *     security:
  *       - BearerAuth: []
@@ -75,7 +91,29 @@ module.exports = router;
  *       content:
  *         application/json:
  *           schema:
- *             $ref: '#/components/schemas/Task'
+ *             type: object
+ *             required: [title, board_id]
+ *             properties:
+ *               title:
+ *                 type: string
+ *               description:
+ *                 type: string
+ *               board_id:
+ *                 type: integer
+ *               status:
+ *                 type: string
+ *                 enum: [pending, in-progress, completed]
+ *               priority:
+ *                 type: string
+ *                 enum: [low, medium, high]
+ *               due_date:
+ *                 type: string
+ *                 format: date-time
+ *                 nullable: true
+ *               assignee_user_id:
+ *                 type: integer
+ *                 nullable: true
+ *                 description: Optional assignee. Owner can assign to any board user; members can only assign to self.
  *     responses:
  *       201:
  *         description: Task created
@@ -92,6 +130,8 @@ module.exports = router;
  *         description: Invalid input
  *       401:
  *         description: Unauthorized
+ *       403:
+ *         description: Forbidden by assignment or board rules
  *       500:
  *         description: Server error
  */
@@ -116,7 +156,28 @@ module.exports = router;
  *       content:
  *         application/json:
  *           schema:
- *             $ref: '#/components/schemas/Task'
+ *             type: object
+ *             properties:
+ *               title:
+ *                 type: string
+ *               description:
+ *                 type: string
+ *               board_id:
+ *                 type: integer
+ *               status:
+ *                 type: string
+ *                 enum: [pending, in-progress, completed]
+ *               priority:
+ *                 type: string
+ *                 enum: [low, medium, high]
+ *               due_date:
+ *                 type: string
+ *                 format: date-time
+ *                 nullable: true
+ *               assignee_user_id:
+ *                 type: integer
+ *                 nullable: true
+ *                 description: Owner can assign/reassign. Members can only self-assign when currently unassigned.
  *     responses:
  *       200:
  *         description: Task updated
@@ -124,6 +185,10 @@ module.exports = router;
  *         description: Invalid input
  *       401:
  *         description: Unauthorized
+ *       403:
+ *         description: Forbidden
+ *       409:
+ *         description: Assignment conflict (task already assigned)
  *       404:
  *         description: Task not found
  *       500:
@@ -148,6 +213,23 @@ module.exports = router;
  *         description: Unauthorized
  *       404:
  *         description: Task not found
+ *       500:
+ *         description: Server error
+ */
+
+/**
+ * @swagger
+ * /api/tasks/stats:
+ *   get:
+ *     summary: Get task statistics for current user
+ *     tags: [Tasks]
+ *     security:
+ *       - BearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Task stats payload
+ *       401:
+ *         description: Unauthorized
  *       500:
  *         description: Server error
  */

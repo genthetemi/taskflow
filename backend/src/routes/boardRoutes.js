@@ -1,7 +1,7 @@
 // routes/boardRoutes.js
 const express = require('express');
 const router = express.Router();
-const { 
+const {
   createBoard,
   getBoards,
   getMyInvitations,
@@ -30,7 +30,7 @@ module.exports = router;
  * @swagger
  * tags:
  *   name: Boards
- *   description: Board management
+ *   description: Board management and invitations
  */
 
 /**
@@ -47,6 +47,7 @@ module.exports = router;
  *         application/json:
  *           schema:
  *             type: object
+ *             required: [name]
  *             properties:
  *               name:
  *                 type: string
@@ -61,9 +62,8 @@ module.exports = router;
  *         description: Unauthorized
  *       500:
  *         description: Server error
- * 
  *   get:
- *     summary: Get all user's boards
+ *     summary: Get boards accessible by authenticated user
  *     tags: [Boards]
  *     security:
  *       - BearerAuth: []
@@ -78,108 +78,175 @@ module.exports = router;
 
 /**
  * @swagger
- * /api/tasks/{id}:
- *   put:
- *     summary: Update a task
- *     tags: [Tasks]
+ * /api/boards/{id}:
+ *   get:
+ *     summary: Get a board by id
+ *     tags: [Boards]
  *     security:
  *       - BearerAuth: []
  *     parameters:
  *       - in: path
  *         name: id
+ *         required: true
  *         schema:
  *           type: integer
+ *         description: Board ID
+ *     responses:
+ *       200:
+ *         description: Board details
+ *       401:
+ *         description: Unauthorized
+ *       404:
+ *         description: Board not found
+ *       500:
+ *         description: Server error
+ *   put:
+ *     summary: Update a board
+ *     tags: [Boards]
+ *     security:
+ *       - BearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
  *         required: true
- *         description: Numeric ID of the task to update
+ *         schema:
+ *           type: integer
+ *         description: Board ID
  *     requestBody:
  *       required: true
  *       content:
  *         application/json:
  *           schema:
  *             type: object
+ *             required: [name]
  *             properties:
- *               title:
+ *               name:
  *                 type: string
  *               description:
  *                 type: string
- *               status:
- *                 type: string
- *                 enum: [Pending, In Progress, Completed]
- *               priority:
- *                 type: string
- *                 enum: [Low, Medium, High]
- *               board_id:
- *                 type: integer
- *               due_date:
- *                 type: string
- *                 format: date-time
  *     responses:
  *       200:
- *         description: Task updated successfully
- *         content:
- *           application/json:
- *             example:
- *               message: "Task updated"
+ *         description: Board updated
  *       400:
  *         description: Invalid input
- *         content:
- *           application/json:
- *             example:
- *               error: "Invalid status value"
  *       401:
  *         description: Unauthorized
- *         content:
- *           application/json:
- *             example:
- *               error: "Unauthorized"
  *       404:
- *         description: Task not found
- *         content:
- *           application/json:
- *             example:
- *               error: "Task not found"
+ *         description: Board not found
  *       500:
  *         description: Server error
- *         content:
- *           application/json:
- *             example:
- *               error: "Database connection failed"
-
  *   delete:
- *     summary: Delete a task
- *     tags: [Tasks]
+ *     summary: Delete a board
+ *     tags: [Boards]
  *     security:
  *       - BearerAuth: []
  *     parameters:
  *       - in: path
  *         name: id
+ *         required: true
  *         schema:
  *           type: integer
- *         required: true
- *         description: Numeric ID of the task to delete
+ *         description: Board ID
  *     responses:
  *       200:
- *         description: Task deleted successfully
- *         content:
- *           application/json:
- *             example:
- *               message: "Task deleted"
+ *         description: Board deleted
  *       401:
  *         description: Unauthorized
- *         content:
- *           application/json:
- *             example:
- *               error: "Unauthorized"
  *       404:
- *         description: Task not found
- *         content:
- *           application/json:
- *             example:
- *               error: "Task not found"
+ *         description: Board not found
  *       500:
  *         description: Server error
- *         content:
- *           application/json:
- *             example:
- *               error: "Database connection failed"
+ */
+
+/**
+ * @swagger
+ * /api/boards/{id}/invite:
+ *   post:
+ *     summary: Invite a user to board by email
+ *     tags: [Boards]
+ *     security:
+ *       - BearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: Board ID
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [email]
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 format: email
+ *     responses:
+ *       201:
+ *         description: Invitation sent
+ *       400:
+ *         description: Invalid input or already member
+ *       403:
+ *         description: Only board owner can invite users
+ *       404:
+ *         description: User not found
+ *       500:
+ *         description: Server error
+ */
+
+/**
+ * @swagger
+ * /api/boards/invitations:
+ *   get:
+ *     summary: Get pending board invitations for current user
+ *     tags: [Boards]
+ *     security:
+ *       - BearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Pending invitations list
+ *       401:
+ *         description: Unauthorized
+ *       500:
+ *         description: Server error
+ */
+
+/**
+ * @swagger
+ * /api/boards/invitations/{invitationId}/respond:
+ *   post:
+ *     summary: Accept or reject board invitation
+ *     tags: [Boards]
+ *     security:
+ *       - BearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: invitationId
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: Invitation ID
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [action]
+ *             properties:
+ *               action:
+ *                 type: string
+ *                 enum: [accept, reject]
+ *     responses:
+ *       200:
+ *         description: Invitation handled
+ *       400:
+ *         description: Invalid request or already handled invitation
+ *       404:
+ *         description: Invitation not found
+ *       500:
+ *         description: Server error
  */
