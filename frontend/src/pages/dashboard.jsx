@@ -13,6 +13,7 @@ import {
   updateBoard,
   deleteBoard,
   inviteBoardUser,
+  fetchBoardUsers,
   fetchBoardInvitations,
   respondToBoardInvitation
 } from '../services/boards';
@@ -22,6 +23,7 @@ const Dashboard = () => {
   const { user } = useAuth();
   // State declarations
   const [tasks, setTasks] = useState([]);
+  const [boardUsers, setBoardUsers] = useState([]);
   const [boards, setBoards] = useState([]);
   const [activeBoard, setActiveBoard] = useState(null);
   const [error, setError] = useState('');
@@ -38,7 +40,8 @@ const Dashboard = () => {
     title: '',
     description: '',
     status: 'pending',
-    priority: 'medium'
+    priority: 'medium',
+    assignee_user_id: ''
   });
   const [inviteEmail, setInviteEmail] = useState('');
   const [isInviting, setIsInviting] = useState(false);
@@ -46,6 +49,17 @@ const Dashboard = () => {
 
   const normalizeStatus = (status) =>
     String(status || 'pending').trim().toLowerCase().replace(/\s+/g, '-');
+
+  const getErrorMessage = (err, fallbackMessage) =>
+    err?.response?.data?.error || err?.message || fallbackMessage;
+
+  const normalizeAssignee = (value) => {
+    if (value === '' || value === null || value === undefined) {
+      return null;
+    }
+    const id = Number(value);
+    return Number.isInteger(id) && id > 0 ? id : null;
+  };
 
   const countByStatus = (status) =>
     tasks.filter((task) => normalizeStatus(task.status) === status).length;
@@ -103,13 +117,19 @@ const Dashboard = () => {
       try {
         if (!activeBoard?.id) {
           setTasks([]);
+          setBoardUsers([]);
           return;
         }
-        const taskData = await fetchTasks(activeBoard.id);
+        const [taskData, boardUsersData] = await Promise.all([
+          fetchTasks(activeBoard.id),
+          fetchBoardUsers(activeBoard.id)
+        ]);
         setTasks(taskData);
+        setBoardUsers(boardUsersData || []);
       } catch (error) {
-        setError('Failed to load tasks');
+        setError(getErrorMessage(error, 'Failed to load tasks'));
         setTasks([]);
+        setBoardUsers([]);
       }
     };
     loadTasks();
@@ -214,6 +234,7 @@ const Dashboard = () => {
     try {
       await createTask({
         ...newTask,
+        assignee_user_id: normalizeAssignee(newTask.assignee_user_id),
         board_id: activeBoard.id
       });
       const updatedTasks = await fetchTasks(activeBoard.id);
@@ -222,16 +243,22 @@ const Dashboard = () => {
         title: '',
         description: '',
         status: 'pending',
-        priority: 'medium'
+        priority: 'medium',
+        assignee_user_id: ''
       });
       setShowTaskModal(false);
     } catch (err) {
-      setError('Failed to create task');
+      setError(getErrorMessage(err, 'Failed to create task'));
     }
   };
 
   const handleEditTask = (task) => {
-    setEditingTask(task);
+    setEditingTask({
+      ...task,
+      status: normalizeStatus(task.status),
+      priority: String(task.priority || 'medium').toLowerCase(),
+      assignee_user_id: task.assignee_user_id ?? ''
+    });
     setShowEditTaskModal(true);
   };
 
@@ -240,6 +267,7 @@ const Dashboard = () => {
     try {
       await updateTask(editingTask.id, {
         ...editingTask,
+        assignee_user_id: normalizeAssignee(editingTask.assignee_user_id),
         board_id: activeBoard.id
       });
       const updatedTasks = await fetchTasks(activeBoard.id);
@@ -247,7 +275,7 @@ const Dashboard = () => {
       setShowEditTaskModal(false);
       setEditingTask(null);
     } catch (err) {
-      setError('Failed to update task');
+      setError(getErrorMessage(err, 'Failed to update task'));
     }
   };
 
@@ -494,6 +522,21 @@ const Dashboard = () => {
                   </Form.Select>
                 </Form.Group>
 
+                <Form.Group className="mb-3">
+                  <Form.Label>Assign To</Form.Label>
+                  <Form.Select
+                    value={newTask.assignee_user_id}
+                    onChange={(e) => setNewTask({...newTask, assignee_user_id: e.target.value})}
+                  >
+                    <option value="">Unassigned</option>
+                    {boardUsers.map((boardUser) => (
+                      <option key={boardUser.id} value={boardUser.id}>
+                        {boardUser.email} {boardUser.role === 'owner' ? '(Owner)' : ''}
+                      </option>
+                    ))}
+                  </Form.Select>
+                </Form.Group>
+
                 <div className="d-flex justify-content-end">
                   <Button variant="secondary" className="me-2" onClick={() => setShowTaskModal(false)}>
                     Cancel
@@ -554,6 +597,21 @@ const Dashboard = () => {
                     <option value="low">Low</option>
                     <option value="medium">Medium</option>
                     <option value="high">High</option>
+                  </Form.Select>
+                </Form.Group>
+
+                <Form.Group className="mb-3">
+                  <Form.Label>Assign To</Form.Label>
+                  <Form.Select
+                    value={editingTask?.assignee_user_id ?? ''}
+                    onChange={(e) => setEditingTask({...editingTask, assignee_user_id: e.target.value})}
+                  >
+                    <option value="">Unassigned</option>
+                    {boardUsers.map((boardUser) => (
+                      <option key={boardUser.id} value={boardUser.id}>
+                        {boardUser.email} {boardUser.role === 'owner' ? '(Owner)' : ''}
+                      </option>
+                    ))}
                   </Form.Select>
                 </Form.Group>
 

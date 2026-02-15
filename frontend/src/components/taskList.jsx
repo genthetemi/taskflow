@@ -21,7 +21,7 @@ const TaskList = ({ tasks, loading, error, onEditTask, onDeleteTask, onToggleSta
   }
 
   const getPriorityColor = (priority) => {
-    switch (priority.toLowerCase()) {
+    switch (String(priority || 'medium').toLowerCase()) {
       case 'high': return '#dc3545';
       case 'medium': return '#ffc107';
       case 'low': return '#0dcaf0';
@@ -30,7 +30,7 @@ const TaskList = ({ tasks, loading, error, onEditTask, onDeleteTask, onToggleSta
   };
 
   const getStatusIcon = (status) => {
-    switch (status.toLowerCase()) {
+    switch (String(status || 'pending').toLowerCase()) {
       case 'completed': 
         return <FiCheckCircle style={{ color: '#198754' }} />;
       case 'in-progress': 
@@ -42,11 +42,11 @@ const TaskList = ({ tasks, loading, error, onEditTask, onDeleteTask, onToggleSta
   };
 
   const getStatusLabel = (status) => {
-    switch (status.toLowerCase()) {
+    switch (String(status || 'pending').toLowerCase()) {
       case 'in-progress':
         return 'In Progress';
       default:
-        return status.charAt(0).toUpperCase() + status.slice(1);
+        return String(status || 'pending').charAt(0).toUpperCase() + String(status || 'pending').slice(1);
     }
   };
 
@@ -127,6 +127,10 @@ const TaskList = ({ tasks, loading, error, onEditTask, onDeleteTask, onToggleSta
                     <p className="task-description">{task.description}</p>
                   )}
 
+                  <div className="task-assignee">
+                    <strong>Assignee:</strong> {task.assignee_email || 'Unassigned'}
+                  </div>
+
                   <div className="task-footer">
                     <button
                       className={`badge status-badge ${normalizeStatus(task.status)}`}
@@ -141,7 +145,7 @@ const TaskList = ({ tasks, loading, error, onEditTask, onDeleteTask, onToggleSta
                         marginLeft: '0.5rem'
                       }}
                     >
-                      {task.priority.charAt(0).toUpperCase() + task.priority.slice(1)} Priority
+                      {String(task.priority || 'medium').charAt(0).toUpperCase() + String(task.priority || 'medium').slice(1)} Priority
                     </Badge>
                   </div>
                 </div>

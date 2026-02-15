@@ -7,6 +7,7 @@ const {
   getMyInvitations,
   respondToInvitation,
   getBoard,
+  getBoardUsers,
   updateBoard,
   deleteBoard,
   inviteUserToBoard
@@ -20,6 +21,7 @@ router.get('/', getBoards);
 router.get('/invitations', getMyInvitations);
 router.post('/invitations/:invitationId/respond', respondToInvitation);
 router.get('/:id', getBoard);
+router.get('/:id/users', getBoardUsers);
 router.put('/:id', updateBoard);
 router.delete('/:id', deleteBoard);
 router.post('/:id/invite', inviteUserToBoard);
@@ -94,6 +96,35 @@ module.exports = router;
  *     responses:
  *       200:
  *         description: Board details
+ *       401:
+ *         description: Unauthorized
+ *       404:
+ *         description: Board not found
+ *       500:
+ *         description: Server error
+ *
+ * /api/boards/{id}/users:
+ *   get:
+ *     summary: Get users that can be assigned tasks on a board
+ *     tags: [Boards]
+ *     security:
+ *       - BearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: Board ID
+ *     responses:
+ *       200:
+ *         description: Users on board (owner and members)
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/BoardUser'
  *       401:
  *         description: Unauthorized
  *       404:

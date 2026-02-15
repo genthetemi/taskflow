@@ -56,6 +56,25 @@ exports.getBoard = async (req, res) => {
   }
 };
 
+exports.getBoardUsers = async (req, res) => {
+  try {
+    const boardId = Number(req.params.id);
+    if (!boardId) {
+      return res.status(400).json({ error: 'Board ID is required' });
+    }
+
+    const users = await Board.getBoardUsers(boardId, req.userId);
+    if (users === null) {
+      return res.status(404).json({ error: 'Board not found' });
+    }
+
+    return res.status(200).json(users);
+  } catch (error) {
+    console.error('Error fetching board users:', error);
+    return res.status(500).json({ error: 'Failed to fetch board users' });
+  }
+};
+
 exports.updateBoard = async (req, res) => {
   try {
     console.log('updateBoard called with params:', req.params, 'body:', req.body, 'userId:', req.userId);

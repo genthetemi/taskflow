@@ -223,7 +223,9 @@ exports.updateTask = async (req, res) => {
       return res.status(400).json({ error: parseError.message });
     }
 
-    if (assignee.provided) {
+    const isAssigneeChanging = assignee.provided && assignee.value !== currentAssignee;
+
+    if (isAssigneeChanging) {
       if (!isBoardOwner) {
         if (assignee.value === null) {
           return res.status(403).json({ error: 'Only board owner can unassign tasks' });
@@ -245,6 +247,8 @@ exports.updateTask = async (req, res) => {
         }
       }
 
+      req.body.assignee_user_id = assignee.value;
+    } else if (assignee.provided) {
       req.body.assignee_user_id = assignee.value;
     }
 
