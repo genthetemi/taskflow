@@ -115,3 +115,19 @@ export const respondToBoardInvitation = async (invitationId, action) => {
     throw new Error(serverMsg);
   }
 };
+
+export const fetchBoardUsers = async (boardId) => {
+  try {
+    const response = await axios.get(`${API_URL}/api/boards/${boardId}/users`, {
+      headers: getAuthHeader()
+    });
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching board users:', error);
+    if (error.response?.status === 401) {
+      handleUnauthorized();
+    }
+    const serverMsg = error.response?.data?.error || error.message || 'Failed to fetch board users';
+    throw new Error(serverMsg);
+  }
+};

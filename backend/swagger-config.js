@@ -84,6 +84,14 @@ const options = {
             email: { type: 'string', format: 'email', example: 'user@example.com' },
             password: { type: 'string', example: 'password123' }
           }
+        },
+        BoardUser: {
+          type: 'object',
+          properties: {
+            id: { type: 'integer', example: 7 },
+            email: { type: 'string', format: 'email', example: 'member@example.com' },
+            role: { type: 'string', enum: ['owner', 'member'], example: 'member' }
+          }
         }
       }
     },

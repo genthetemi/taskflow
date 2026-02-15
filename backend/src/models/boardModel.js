@@ -167,6 +167,33 @@ const getAllBoards = async (userId) => {
   }
 };
 
+const getBoardUsers = async (boardId, requesterUserId) => {
+  const canAccessBoard = await hasBoardAccess(boardId, requesterUserId);
+  if (!canAccessBoard) {
+    return null;
+  }
+
+  const [rows] = await pool.query(
+    `SELECT DISTINCT u.id,
+            u.email,
+            CASE WHEN b.user_id = u.id THEN 'owner' ELSE 'member' END AS role
+     FROM boards b
+     JOIN users u ON (
+       u.id = b.user_id
+       OR EXISTS (
+         SELECT 1
+         FROM board_members bm
+         WHERE bm.board_id = b.id AND bm.user_id = u.id
+       )
+     )
+     WHERE b.id = ?
+     ORDER BY role DESC, u.email ASC`,
+    [boardId]
+  );
+
+  return rows;
+};
+
 const updateBoard = async (id, board) => {
   const { name, description } = board;
   try {
@@ -205,6 +232,7 @@ module.exports = {
   getInvitationForUser,
   respondToInvitation,
   getBoardById,
+  getBoardUsers,
   getAllBoards,
   updateBoard,
   deleteBoard
