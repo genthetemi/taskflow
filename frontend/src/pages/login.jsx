@@ -73,6 +73,10 @@ const Login = () => {
                     />
                   </Form.Group>
 
+                  <div className="mb-3">
+                    <Link to="/forgot-password">Forgot password?</Link>
+                  </div>
+
                   {successMessage && (
                     <div className="alert alert-success" role="alert">
                       {successMessage}
