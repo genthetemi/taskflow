@@ -34,6 +34,9 @@ const setupDatabase = async () => {
   await ensureColumn('users', 'last_login_ip', '`last_login_ip` VARCHAR(45) NULL');
   await ensureColumn('users', 'last_login_at', '`last_login_at` DATETIME NULL');
   await ensureColumn('users', 'last_login_user_agent', '`last_login_user_agent` VARCHAR(255) NULL');
+  await ensureColumn('users', 'password_reset_code_hash', '`password_reset_code_hash` VARCHAR(64) NULL');
+  await ensureColumn('users', 'password_reset_expires_at', '`password_reset_expires_at` DATETIME NULL');
+  await ensureColumn('users', 'password_reset_used', '`password_reset_used` TINYINT(1) NOT NULL DEFAULT 0');
   await ensureColumn('tasks', 'assignee_user_id', '`assignee_user_id` INT NULL');
 
   await ensureTable(

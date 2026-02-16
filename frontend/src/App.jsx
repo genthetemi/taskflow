@@ -3,6 +3,7 @@ import { AuthProvider } from './context/authContext';
 import PrivateRoute from './components/privateRoute';
 import Login from './pages/login';
 import Register from './pages/register';
+import ForgotPassword from './pages/forgotPassword';
 import Dashboard from './pages/dashboard';
 import Settings from './pages/settings';
 import AdminLayout from './pages/adminLayout';
@@ -33,6 +34,7 @@ function App() {
           <Route path="/contact" element={<Contact />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
           
           {/* Protected Routes */}
           <Route
