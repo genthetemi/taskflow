@@ -2,7 +2,7 @@ import React from 'react';
 import { Spinner, Alert, Badge } from 'react-bootstrap';
 import { FiEdit2, FiTrash2, FiCheckCircle, FiClock, FiCircle } from 'react-icons/fi';
 
-const TaskList = ({ tasks, loading, error, onEditTask, onDeleteTask, onToggleStatus, onMoveTask }) => {
+const TaskList = ({ tasks, loading, error, onEditTask, onDeleteTask, onToggleStatus, onMoveTask, onViewTask }) => {
   if (loading) {
     return (
       <div className="text-center mt-4">
@@ -64,6 +64,53 @@ const TaskList = ({ tasks, loading, error, onEditTask, onDeleteTask, onToggleSta
     { key: 'completed', label: 'Completed' }
   ];
 
+  const getDueState = (dueDate) => {
+    if (!dueDate) {
+      return null;
+    }
+
+    const due = new Date(dueDate);
+    if (Number.isNaN(due.getTime())) {
+      return null;
+    }
+
+    const now = new Date();
+    const diffInMs = due.getTime() - now.getTime();
+    const diffInDays = diffInMs / (1000 * 60 * 60 * 24);
+
+    if (diffInDays < 0) {
+      return {
+        label: 'Overdue',
+        className: 'overdue'
+      };
+    }
+
+    if (diffInDays <= 2) {
+      return {
+        label: 'Due Soon',
+        className: 'due-soon'
+      };
+    }
+
+    return {
+      label: 'Scheduled',
+      className: 'scheduled'
+    };
+  };
+
+  const formatDueDate = (dueDate) => {
+    if (!dueDate) {
+      return 'No due date';
+    }
+
+    const parsedDate = new Date(dueDate);
+    if (Number.isNaN(parsedDate.getTime())) {
+      return 'No due date';
+    }
+
+    return parsedDate.toLocaleString();
+  };
+
   const handleDrop = (event, status) => {
     event.preventDefault();
     const rawId = event.dataTransfer.getData('text/plain');
@@ -99,6 +146,15 @@ const TaskList = ({ tasks, loading, error, onEditTask, onDeleteTask, onToggleSta
                   onDragStart={(event) => {
                     event.dataTransfer.setData('text/plain', String(task.id));
                   }}
+                  onClick={() => typeof onViewTask === 'function' && onViewTask(task)}
+                  onKeyDown={(event) => {
+                    if ((event.key === 'Enter' || event.key === ' ') && typeof onViewTask === 'function') {
+                      event.preventDefault();
+                      onViewTask(task);
+                    }
+                  }}
+                  role="button"
+                  tabIndex={0}
                 >
                   <div className="task-header">
                     <div className="task-title-section">
@@ -108,14 +164,20 @@ const TaskList = ({ tasks, loading, error, onEditTask, onDeleteTask, onToggleSta
                     <div className="task-actions">
                       <button
                         className="task-action-btn edit-btn"
-                        onClick={() => onEditTask(task)}
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          onEditTask(task);
+                        }}
                         title="Edit task"
                       >
                         <FiEdit2 />
                       </button>
                       <button
                         className="task-action-btn delete-btn"
-                        onClick={() => onDeleteTask(task.id)}
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          onDeleteTask(task.id);
+                        }}
                         title="Delete task"
                       >
                         <FiTrash2 />
@@ -131,10 +193,24 @@ const TaskList = ({ tasks, loading, error, onEditTask, onDeleteTask, onToggleSta
                     <strong>Assignee:</strong> {task.assignee_email || 'Unassigned'}
                   </div>
 
+                  <div className="task-meta-row">
+                    <span className="task-due-date">Due: {formatDueDate(task.due_date)}</span>
+                    {getDueState(task.due_date) && (
+                      <span className={`task-due-indicator ${getDueState(task.due_date).className}`}>
+                        {getDueState(task.due_date).label}
+                      </span>
+                    )}
+                  </div>
+
                   <div className="task-footer">
                     <button
                       className={`badge status-badge ${normalizeStatus(task.status)}`}
-                      onClick={() => typeof onToggleStatus === 'function' && onToggleStatus(task)}
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        if (typeof onToggleStatus === 'function') {
+                          onToggleStatus(task);
+                        }
+                      }}
                       title="Change status"
                     >
                       {getStatusLabel(normalizeStatus(task.status))}
