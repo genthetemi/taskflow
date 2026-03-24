@@ -57,6 +57,11 @@ const Navbar = ({
             <li className="nav-item">
               <NavLink className={getNavLinkClass} to="/about" onClick={() => setOpen(false)}>ABOUT</NavLink>
             </li>
+
+            <li className="nav-item">
+              <NavLink className={getNavLinkClass} to="/shkolla" onClick={() => setOpen(false)}>SHKOLLA</NavLink>
+            </li>
+
             <li className="nav-item">
               <NavLink className={getNavLinkClass} to="/contact" onClick={() => setOpen(false)}>CONTACT</NavLink>
             </li>

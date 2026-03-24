@@ -66,6 +66,7 @@ const parseAssignee = (value) => {
 exports.getTasks = async (req, res) => {
   try {
     const boardId = req.query.board_id;
+    const searchQuery = typeof req.query.q === 'string' ? req.query.q.trim() : '';
     
     if (!boardId) {
       return res.status(400).json({ error: 'Board ID is required' });
@@ -76,7 +77,7 @@ exports.getTasks = async (req, res) => {
       return res.status(404).json({ error: 'Board not found' });
     }
 
-    const tasks = await Task.getAllTasks(boardId);
+    const tasks = await Task.getAllTasks(boardId, { query: searchQuery });
     res.status(200).json(tasks);
   } catch (error) {
     console.error("Error fetching tasks:", error.message);

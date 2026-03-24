@@ -1,4 +1,5 @@
 const { getTasks, addTask, updateTask, deleteTask } = require('../controllers/taskController');
+const { getTaskComments, addTaskComment } = require('../controllers/taskCommentController');
 const express = require('express');
 const router = express.Router();
 const { authenticate } = require('../middleware/authMiddleware');
@@ -11,6 +12,10 @@ router.get('/', getTasks);
 
 // Create a new task
 router.post('/', addTask);
+
+// Task comments stored in MongoDB
+router.get('/:id/comments', getTaskComments);
+router.post('/:id/comments', addTaskComment);
 
 // Update a task
 router.put('/:id', updateTask);

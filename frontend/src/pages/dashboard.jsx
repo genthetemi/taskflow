@@ -6,7 +6,8 @@ import Navbar from '../components/navbar';
 import TaskList from '../components/taskList';
 import Sidebar from '../components/sidebar';
 import StatsCard from '../components/statsCard';
-import { fetchTasks, createTask, updateTask, deleteTask } from '../services/tasks';
+import TaskDetailModal from '../components/taskDetailModal';
+import { fetchTasks, createTask, updateTask, deleteTask, fetchTaskComments, createTaskComment } from '../services/tasks';
 import {
   fetchBoards,
   createBoard,
@@ -23,6 +24,7 @@ const Dashboard = () => {
   const { user } = useAuth();
   // State declarations
   const [tasks, setTasks] = useState([]);
+  const [isTasksLoading, setIsTasksLoading] = useState(false);
   const [boardUsers, setBoardUsers] = useState([]);
   const [boards, setBoards] = useState([]);
   const [activeBoard, setActiveBoard] = useState(null);
@@ -36,11 +38,24 @@ const Dashboard = () => {
   const [editingTask, setEditingTask] = useState(null);
   const [showEditBoardModal, setShowEditBoardModal] = useState(false);
   const [editingBoard, setEditingBoard] = useState(null);
+  const [showTaskDetailsModal, setShowTaskDetailsModal] = useState(false);
+  const [selectedTask, setSelectedTask] = useState(null);
+  const [taskComments, setTaskComments] = useState([]);
+  const [taskCommentDraft, setTaskCommentDraft] = useState('');
+  const [commentsError, setCommentsError] = useState('');
+  const [isCommentsLoading, setIsCommentsLoading] = useState(false);
+  const [isSubmittingComment, setIsSubmittingComment] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [priorityFilter, setPriorityFilter] = useState('all');
+  const [assigneeFilter, setAssigneeFilter] = useState('all');
+  const [sortBy, setSortBy] = useState('due-date');
   const [newTask, setNewTask] = useState({
     title: '',
     description: '',
     status: 'pending',
     priority: 'medium',
+    due_date: '',
     assignee_user_id: ''
   });
   const [inviteEmail, setInviteEmail] = useState('');
@@ -66,6 +81,64 @@ const Dashboard = () => {
 
   const toggleSidebar = () => setIsSidebarOpen(v => !v);
 
+  const formatDateTimeInput = (value) => {
+    if (!value) {
+      return '';
+    }
+
+    const parsedDate = new Date(value);
+    if (Number.isNaN(parsedDate.getTime())) {
+      return '';
+    }
+
+    const offset = parsedDate.getTimezoneOffset();
+    const localDate = new Date(parsedDate.getTime() - offset * 60000);
+    return localDate.toISOString().slice(0, 16);
+  };
+
+  const getVisibleTasks = () => {
+    const filteredTasks = tasks.filter((task) => {
+      const normalizedTaskStatus = normalizeStatus(task.status);
+      const normalizedTaskPriority = String(task.priority || 'medium').toLowerCase();
+      const taskAssignee = task.assignee_user_id === null || task.assignee_user_id === undefined
+        ? 'unassigned'
+        : String(task.assignee_user_id);
+
+      const matchesStatus = statusFilter === 'all' || normalizedTaskStatus === statusFilter;
+      const matchesPriority = priorityFilter === 'all' || normalizedTaskPriority === priorityFilter;
+      const matchesAssignee = assigneeFilter === 'all' || taskAssignee === assigneeFilter;
+
+      return matchesStatus && matchesPriority && matchesAssignee;
+    });
+
+    return filteredTasks.sort((firstTask, secondTask) => {
+      if (sortBy === 'priority') {
+        const priorityRank = { high: 0, medium: 1, low: 2 };
+        return priorityRank[String(firstTask.priority || 'medium').toLowerCase()] - priorityRank[String(secondTask.priority || 'medium').toLowerCase()];
+      }
+
+      if (sortBy === 'created-date') {
+        return new Date(secondTask.created_at || 0) - new Date(firstTask.created_at || 0);
+      }
+
+      return new Date(firstTask.due_date || 8640000000000000) - new Date(secondTask.due_date || 8640000000000000);
+    });
+  };
+
+  const loadTaskComments = async (taskId) => {
+    try {
+      setIsCommentsLoading(true);
+      setCommentsError('');
+      const comments = await fetchTaskComments(taskId);
+      setTaskComments(comments || []);
+    } catch (err) {
+      setCommentsError(getErrorMessage(err, 'Failed to load comments'));
+      setTaskComments([]);
+    } finally {
+      setIsCommentsLoading(false);
+    }
+  };
+
   const loadInvitations = async () => {
     try {
       setIsInvitesLoading(true);
@@ -84,7 +157,7 @@ const Dashboard = () => {
       const order = ['pending', 'in-progress', 'completed'];
       const idx = order.indexOf((task.status || 'pending').toLowerCase());
       const next = order[(idx + 1) % order.length];
-      await updateTask(task.id, { ...task, status: next, board_id: activeBoard?.id });
+      await updateTask(task.id, { status: next, board_id: activeBoard?.id });
       const updatedTasks = await fetchTasks(activeBoard.id);
       setTasks(updatedTasks);
     } catch (err) {
@@ -111,29 +184,47 @@ const Dashboard = () => {
     return () => clearInterval(intervalId);
   }, []);
 
-  // Load tasks when board changes
+  // Load board users when board changes
+  useEffect(() => {
+    const loadBoardUsersData = async () => {
+      try {
+        if (!activeBoard?.id) {
+          setBoardUsers([]);
+          return;
+        }
+
+        const boardUsersData = await fetchBoardUsers(activeBoard.id);
+        setBoardUsers(boardUsersData || []);
+      } catch (error) {
+        setError(getErrorMessage(error, 'Failed to load board users'));
+        setBoardUsers([]);
+      }
+    };
+    loadBoardUsersData();
+  }, [activeBoard]);
+
+  // Load tasks when board or search changes
   useEffect(() => {
     const loadTasks = async () => {
       try {
         if (!activeBoard?.id) {
           setTasks([]);
-          setBoardUsers([]);
           return;
         }
-        const [taskData, boardUsersData] = await Promise.all([
-          fetchTasks(activeBoard.id),
-          fetchBoardUsers(activeBoard.id)
-        ]);
+
+        setIsTasksLoading(true);
+        const taskData = await fetchTasks(activeBoard.id, { query: searchQuery.trim() });
         setTasks(taskData);
-        setBoardUsers(boardUsersData || []);
       } catch (error) {
         setError(getErrorMessage(error, 'Failed to load tasks'));
         setTasks([]);
-        setBoardUsers([]);
+      } finally {
+        setIsTasksLoading(false);
       }
     };
+
     loadTasks();
-  }, [activeBoard]);
+  }, [activeBoard, searchQuery]);
 
   // Board handlers
   const handleCreateBoard = async (boardInput) => {
@@ -234,16 +325,18 @@ const Dashboard = () => {
     try {
       await createTask({
         ...newTask,
+        due_date: newTask.due_date || null,
         assignee_user_id: normalizeAssignee(newTask.assignee_user_id),
         board_id: activeBoard.id
       });
-      const updatedTasks = await fetchTasks(activeBoard.id);
+      const updatedTasks = await fetchTasks(activeBoard.id, { query: searchQuery.trim() });
       setTasks(updatedTasks);
       setNewTask({
         title: '',
         description: '',
         status: 'pending',
         priority: 'medium',
+        due_date: '',
         assignee_user_id: ''
       });
       setShowTaskModal(false);
@@ -257,6 +350,7 @@ const Dashboard = () => {
       ...task,
       status: normalizeStatus(task.status),
       priority: String(task.priority || 'medium').toLowerCase(),
+      due_date: formatDateTimeInput(task.due_date),
       assignee_user_id: task.assignee_user_id ?? ''
     });
     setShowEditTaskModal(true);
@@ -267,10 +361,11 @@ const Dashboard = () => {
     try {
       await updateTask(editingTask.id, {
         ...editingTask,
+        due_date: editingTask.due_date || null,
         assignee_user_id: normalizeAssignee(editingTask.assignee_user_id),
         board_id: activeBoard.id
       });
-      const updatedTasks = await fetchTasks(activeBoard.id);
+      const updatedTasks = await fetchTasks(activeBoard.id, { query: searchQuery.trim() });
       setTasks(updatedTasks);
       setShowEditTaskModal(false);
       setEditingTask(null);
@@ -283,7 +378,7 @@ const Dashboard = () => {
     if (window.confirm('Are you sure you want to delete this task?')) {
       try {
         await deleteTask(taskId);
-        const updatedTasks = await fetchTasks(activeBoard.id);
+        const updatedTasks = await fetchTasks(activeBoard.id, { query: searchQuery.trim() });
         setTasks(updatedTasks);
       } catch (err) {
         setError('Failed to delete task');
@@ -299,16 +394,46 @@ const Dashboard = () => {
 
     try {
       await updateTask(task.id, {
-        ...task,
         status: nextStatus,
         board_id: activeBoard.id
       });
-      const updatedTasks = await fetchTasks(activeBoard.id);
+      const updatedTasks = await fetchTasks(activeBoard.id, { query: searchQuery.trim() });
       setTasks(updatedTasks);
     } catch (err) {
       setError('Failed to move task');
     }
   };
+
+  const handleOpenTaskDetails = async (task) => {
+    setSelectedTask(task);
+    setTaskCommentDraft('');
+    setShowTaskDetailsModal(true);
+    await loadTaskComments(task.id);
+  };
+
+  const handleSubmitTaskComment = async (event) => {
+    event.preventDefault();
+
+    if (!selectedTask?.id || !taskCommentDraft.trim()) {
+      return;
+    }
+
+    try {
+      setIsSubmittingComment(true);
+      setCommentsError('');
+      await createTaskComment(selectedTask.id, taskCommentDraft.trim());
+      setTaskCommentDraft('');
+      await loadTaskComments(selectedTask.id);
+    } catch (err) {
+      setCommentsError(getErrorMessage(err, 'Failed to post comment'));
+    } finally {
+      setIsSubmittingComment(false);
+    }
+  };
+
+  const visibleTasks = getVisibleTasks();
+  const overdueCount = visibleTasks.filter((task) => task.due_date && new Date(task.due_date) < new Date()).length;
+  const assignedToMeCount = visibleTasks.filter((task) => Number(task.assignee_user_id) === Number(user?.id)).length;
 
   if (user?.role === 'admin') {
     return <Navigate to="/admin" replace />;
@@ -387,8 +512,8 @@ const Dashboard = () => {
               <div className="dashboard-stats-grid">
                 <div className="dashboard-stats-item">
                   <StatsCard 
-                    title="Total Tasks"
-                    value={tasks.length}
+                      title="Visible Tasks"
+                      value={visibleTasks.length}
                     variant="primary"
                     icon="fa-clipboard-list"
                   />
@@ -411,10 +536,10 @@ const Dashboard = () => {
                 </div>
                 <div className="dashboard-stats-item">
                   <StatsCard 
-                    title="Completed Tasks"
-                    value={countByStatus('completed')}
+                    title="Overdue / Mine"
+                    value={`${overdueCount} / ${assignedToMeCount}`}
                     variant="success"
-                    icon="fa-check-circle"
+                    icon="fa-bolt"
                   />
                 </div>
               </div>
@@ -422,14 +547,51 @@ const Dashboard = () => {
               <Card className="task-list-card">
                 <Card.Header className="task-list-header">
                   <h3>{activeBoard.name} Tasks</h3>
+                  <div className="task-toolbar">
+                    <Form.Control
+                      type="search"
+                      placeholder="Search tasks"
+                      value={searchQuery}
+                      onChange={(event) => setSearchQuery(event.target.value)}
+                      className="task-search-input"
+                    />
+                    <Form.Select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)}>
+                      <option value="all">All Statuses</option>
+                      <option value="pending">Pending</option>
+                      <option value="in-progress">In Progress</option>
+                      <option value="completed">Completed</option>
+                    </Form.Select>
+                    <Form.Select value={priorityFilter} onChange={(event) => setPriorityFilter(event.target.value)}>
+                      <option value="all">All Priorities</option>
+                      <option value="high">High</option>
+                      <option value="medium">Medium</option>
+                      <option value="low">Low</option>
+                    </Form.Select>
+                    <Form.Select value={assigneeFilter} onChange={(event) => setAssigneeFilter(event.target.value)}>
+                      <option value="all">All Assignees</option>
+                      <option value="unassigned">Unassigned</option>
+                      {boardUsers.map((boardUser) => (
+                        <option key={boardUser.id} value={String(boardUser.id)}>
+                          {boardUser.email}
+                        </option>
+                      ))}
+                    </Form.Select>
+                    <Form.Select value={sortBy} onChange={(event) => setSortBy(event.target.value)}>
+                      <option value="due-date">Sort by Due Date</option>
+                      <option value="priority">Sort by Priority</option>
+                      <option value="created-date">Sort by Created Date</option>
+                    </Form.Select>
+                  </div>
                 </Card.Header>
                 <Card.Body>
                   <TaskList 
-                    tasks={tasks}
+                    tasks={visibleTasks}
+                    loading={isTasksLoading}
                     onEditTask={handleEditTask}
                     onDeleteTask={handleDeleteTask}
                     onToggleStatus={handleToggleStatus}
                     onMoveTask={handleMoveTask}
+                    onViewTask={handleOpenTaskDetails}
                   />
                 </Card.Body>
               </Card>
@@ -523,6 +685,15 @@ const Dashboard = () => {
                 </Form.Group>
 
                 <Form.Group className="mb-3">
+                  <Form.Label>Due Date</Form.Label>
+                  <Form.Control
+                    type="datetime-local"
+                    value={newTask.due_date}
+                    onChange={(e) => setNewTask({...newTask, due_date: e.target.value})}
+                  />
+                </Form.Group>
+
+                <Form.Group className="mb-3">
                   <Form.Label>Assign To</Form.Label>
                   <Form.Select
                     value={newTask.assignee_user_id}
@@ -601,6 +772,15 @@ const Dashboard = () => {
                 </Form.Group>
 
                 <Form.Group className="mb-3">
+                  <Form.Label>Due Date</Form.Label>
+                  <Form.Control
+                    type="datetime-local"
+                    value={editingTask?.due_date || ''}
+                    onChange={(e) => setEditingTask({...editingTask, due_date: e.target.value})}
+                  />
+                </Form.Group>
+
+                <Form.Group className="mb-3">
                   <Form.Label>Assign To</Form.Label>
                   <Form.Select
                     value={editingTask?.assignee_user_id ?? ''}
@@ -665,6 +845,25 @@ const Dashboard = () => {
               </Form>
             </Modal.Body>
           </Modal>
+
+          <TaskDetailModal
+            show={showTaskDetailsModal}
+            task={selectedTask}
+            comments={taskComments}
+            commentValue={taskCommentDraft}
+            commentsError={commentsError}
+            isCommentsLoading={isCommentsLoading}
+            isSubmittingComment={isSubmittingComment}
+            onClose={() => {
+              setShowTaskDetailsModal(false);
+              setSelectedTask(null);
+              setTaskComments([]);
+              setTaskCommentDraft('');
+              setCommentsError('');
+            }}
+            onCommentChange={setTaskCommentDraft}
+            onSubmitComment={handleSubmitTaskComment}
+          />
         </Container>
       </div>
     </div>

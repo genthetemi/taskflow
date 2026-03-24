@@ -20,6 +20,7 @@ import Contact from './pages/contact';
 import AdminRoute from './components/adminRoute';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import './App.css';
+import ShkollaPage from "./pages/ShkollaPage";
 
 function App() {
   return (
@@ -35,6 +36,8 @@ function App() {
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
+          <Route path="/shkolla" element={<ShkollaPage />} />
+          
           
           {/* Protected Routes */}
           <Route

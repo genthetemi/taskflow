@@ -1,16 +1,27 @@
 const pool = require('../config/db');
 
 // Get all tasks for a board
-const getAllTasks = async (boardId) => {
+const getAllTasks = async (boardId, options = {}) => {
+  const { query } = options;
+
   try {
-    const [rows] = await pool.query(
+    let sql =
       `SELECT t.*, creator.email AS creator_email, assignee.email AS assignee_email
        FROM tasks t
        LEFT JOIN users creator ON creator.id = t.user_id
        LEFT JOIN users assignee ON assignee.id = t.assignee_user_id
-       WHERE t.board_id = ?`,
-      [boardId]
-    );
+       WHERE t.board_id = ?`;
+    const params = [boardId];
+
+    if (query) {
+      sql += ' AND (t.title LIKE ? OR t.description LIKE ?)';
+      const searchTerm = `%${query}%`;
+      params.push(searchTerm, searchTerm);
+    }
+
+    sql += ' ORDER BY COALESCE(t.due_date, t.created_at) ASC, t.created_at DESC';
+
+    const [rows] = await pool.query(sql, params);
     return rows;
   } catch (error) {
     console.error("Database error in getAllTasks:", error);
