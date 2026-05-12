@@ -28,6 +28,12 @@ const AdminUsers = () => {
     role: 'user',
     status: 'active'
   });
+  const [isSavingEdit, setIsSavingEdit] = useState(false);
+  const [isSavingAdd, setIsSavingAdd] = useState(false);
+  const [actionLoading, setActionLoading] = useState({
+    revokeUserId: null,
+    deleteUserId: null
+  });
 
   const loadUsers = async () => {
     const data = await fetchAdminUsers();
@@ -39,19 +45,22 @@ const AdminUsers = () => {
   }, []);
 
   const handleRevokeSessions = async (id) => {
+    setActionLoading((prev) => ({ ...prev, revokeUserId: id }));
     try {
       await revokeSessions(id);
       setMessage('Sessions revoked for the selected user.');
     } catch (error) {
       const msg = error.response?.data?.error || 'Failed to revoke sessions.';
       setMessage(msg);
+    } finally {
+      setActionLoading((prev) => ({ ...prev, revokeUserId: null }));
     }
   };
 
   const handleDeleteUser = async (id, email) => {
     const ok = window.confirm(`Delete user ${email}? This cannot be undone.`);
     if (!ok) return;
-
+    setActionLoading((prev) => ({ ...prev, deleteUserId: id }));
     try {
       await deleteUser(id);
       await loadUsers();
@@ -59,6 +68,8 @@ const AdminUsers = () => {
     } catch (error) {
       const msg = error.response?.data?.error || 'Failed to delete user.';
       setMessage(msg);
+    } finally {
+      setActionLoading((prev) => ({ ...prev, deleteUserId: null }));
     }
   };
 
@@ -110,6 +121,7 @@ const AdminUsers = () => {
       return;
     }
 
+    setIsSavingEdit(true);
     try {
       await updateUserDetails(editingUser.id, {
         first_name: editForm.first_name.trim(),
@@ -124,6 +136,8 @@ const AdminUsers = () => {
     } catch (error) {
       const msg = error.response?.data?.error || 'Failed to update user.';
       setMessage(msg);
+    } finally {
+      setIsSavingEdit(false);
     }
   };
 
@@ -146,6 +160,7 @@ const AdminUsers = () => {
       return;
     }
 
+    setIsSavingAdd(true);
     try {
       await createAdminUser({
         first_name: addForm.first_name.trim(),
@@ -161,6 +176,8 @@ const AdminUsers = () => {
     } catch (error) {
       const msg = error.response?.data?.error || 'Failed to create user.';
       setMessage(msg);
+    } finally {
+      setIsSavingAdd(false);
     }
   };
 
@@ -169,7 +186,7 @@ const AdminUsers = () => {
       <div className="admin-header">
         <h1>User & Access Control</h1>
         <div className="admin-inline">
-          <button className="btn btn-dark" onClick={openAdd}>Add new user</button>
+          <button className="btn btn-dark" onClick={openAdd} disabled={isSavingAdd || isSavingEdit}>Add new user</button>
         </div>
         {message && <p className="admin-message">{message}</p>}
       </div>
@@ -208,22 +225,25 @@ const AdminUsers = () => {
                     <button
                       className="btn btn-sm btn-outline-dark"
                       onClick={() => handleRevokeSessions(user.id)}
+                      disabled={actionLoading.revokeUserId === user.id}
                     >
-                      Revoke Sessions
+                      {actionLoading.revokeUserId === user.id ? 'Revoking...' : 'Revoke Sessions'}
                     </button>
                   </td>
                   <td>
                     <button
                       className="btn btn-sm btn-dark"
                       onClick={() => openEdit(user)}
+                      disabled={actionLoading.deleteUserId === user.id || actionLoading.revokeUserId === user.id}
                     >
                       Edit
                     </button>
                     <button
                       className="btn btn-sm btn-outline-danger ms-2"
                       onClick={() => handleDeleteUser(user.id, user.email)}
+                      disabled={actionLoading.deleteUserId === user.id}
                     >
-                      Delete
+                      {actionLoading.deleteUserId === user.id ? 'Deleting...' : 'Delete'}
                     </button>
                   </td>
                 </tr>
@@ -238,7 +258,7 @@ const AdminUsers = () => {
           <div className="admin-modal-card">
             <div className="admin-modal-header">
               <h2>Edit user</h2>
-              <button className="btn btn-sm btn-outline-dark" onClick={closeEdit}>Close</button>
+              <button className="btn btn-sm btn-outline-dark" onClick={closeEdit} disabled={isSavingEdit}>Close</button>
             </div>
             <form onSubmit={handleEditSave}>
               <div className="admin-modal-grid">
@@ -249,6 +269,7 @@ const AdminUsers = () => {
                     value={editForm.first_name}
                     onChange={(event) => setEditForm(prev => ({ ...prev, first_name: event.target.value }))}
                     required
+                    disabled={isSavingEdit}
                   />
                 </label>
                 <label className="admin-field">
@@ -258,6 +279,7 @@ const AdminUsers = () => {
                     value={editForm.last_name}
                     onChange={(event) => setEditForm(prev => ({ ...prev, last_name: event.target.value }))}
                     required
+                    disabled={isSavingEdit}
                   />
                 </label>
                 <label className="admin-field admin-field-full">
@@ -267,6 +289,7 @@ const AdminUsers = () => {
                     value={editForm.email}
                     onChange={(event) => setEditForm(prev => ({ ...prev, email: event.target.value }))}
                     required
+                    disabled={isSavingEdit}
                   />
                 </label>
                 <label className="admin-field">
@@ -274,6 +297,7 @@ const AdminUsers = () => {
                   <select
                     value={editForm.role}
                     onChange={(event) => setEditForm(prev => ({ ...prev, role: event.target.value }))}
+                    disabled={isSavingEdit}
                   >
                     <option value="user">User</option>
                     <option value="admin">Admin</option>
@@ -284,6 +308,7 @@ const AdminUsers = () => {
                   <select
                     value={editForm.status}
                     onChange={(event) => setEditForm(prev => ({ ...prev, status: event.target.value }))}
+                    disabled={isSavingEdit}
                   >
                     <option value="active">Active</option>
                     <option value="disabled">Disabled</option>
@@ -291,8 +316,8 @@ const AdminUsers = () => {
                 </label>
               </div>
               <div className="admin-modal-actions">
-                <button type="button" className="btn btn-outline-dark" onClick={closeEdit}>Cancel</button>
-                <button type="submit" className="btn btn-dark">Save changes</button>
+                <button type="button" className="btn btn-outline-dark" onClick={closeEdit} disabled={isSavingEdit}>Cancel</button>
+                <button type="submit" className="btn btn-dark" disabled={isSavingEdit}>{isSavingEdit ? 'Saving...' : 'Save changes'}</button>
               </div>
             </form>
           </div>
@@ -304,7 +329,7 @@ const AdminUsers = () => {
           <div className="admin-modal-card">
             <div className="admin-modal-header">
               <h2>Add new user</h2>
-              <button className="btn btn-sm btn-outline-dark" onClick={closeAdd}>Close</button>
+              <button className="btn btn-sm btn-outline-dark" onClick={closeAdd} disabled={isSavingAdd}>Close</button>
             </div>
             <form onSubmit={handleAddSave}>
               <div className="admin-modal-grid">
@@ -315,6 +340,7 @@ const AdminUsers = () => {
                     value={addForm.first_name}
                     onChange={(event) => setAddForm(prev => ({ ...prev, first_name: event.target.value }))}
                     required
+                    disabled={isSavingAdd}
                   />
                 </label>
                 <label className="admin-field">
@@ -324,6 +350,7 @@ const AdminUsers = () => {
                     value={addForm.last_name}
                     onChange={(event) => setAddForm(prev => ({ ...prev, last_name: event.target.value }))}
                     required
+                    disabled={isSavingAdd}
                   />
                 </label>
                 <label className="admin-field admin-field-full">
@@ -333,6 +360,7 @@ const AdminUsers = () => {
                     value={addForm.email}
                     onChange={(event) => setAddForm(prev => ({ ...prev, email: event.target.value }))}
                     required
+                    disabled={isSavingAdd}
                   />
                 </label>
                 <label className="admin-field admin-field-full">
@@ -343,6 +371,7 @@ const AdminUsers = () => {
                     onChange={(event) => setAddForm(prev => ({ ...prev, password: event.target.value }))}
                     required
                     minLength={8}
+                    disabled={isSavingAdd}
                   />
                 </label>
                 <label className="admin-field">
@@ -350,6 +379,7 @@ const AdminUsers = () => {
                   <select
                     value={addForm.role}
                     onChange={(event) => setAddForm(prev => ({ ...prev, role: event.target.value }))}
+                    disabled={isSavingAdd}
                   >
                     <option value="user">User</option>
                     <option value="admin">Admin</option>
@@ -360,6 +390,7 @@ const AdminUsers = () => {
                   <select
                     value={addForm.status}
                     onChange={(event) => setAddForm(prev => ({ ...prev, status: event.target.value }))}
+                    disabled={isSavingAdd}
                   >
                     <option value="active">Active</option>
                     <option value="disabled">Disabled</option>
@@ -367,8 +398,8 @@ const AdminUsers = () => {
                 </label>
               </div>
               <div className="admin-modal-actions">
-                <button type="button" className="btn btn-outline-dark" onClick={closeAdd}>Cancel</button>
-                <button type="submit" className="btn btn-dark">Create user</button>
+                <button type="button" className="btn btn-outline-dark" onClick={closeAdd} disabled={isSavingAdd}>Cancel</button>
+                <button type="submit" className="btn btn-dark" disabled={isSavingAdd}>{isSavingAdd ? 'Creating...' : 'Create user'}</button>
               </div>
             </form>
           </div>

@@ -11,14 +11,53 @@ const Login = () => {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [fieldErrors, setFieldErrors] = useState({ email: '', password: '' });
   const { login: authLogin } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const successMessage = location.state?.message || '';
 
+  const validateEmail = (value) => {
+    const cleanValue = String(value || '').trim();
+    if (!cleanValue) return 'Email is required.';
+    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(cleanValue)) return 'Enter a valid email address.';
+    return '';
+  };
+
+  const validatePassword = (value) => {
+    const cleanValue = String(value || '');
+    if (!cleanValue) return 'Password is required.';
+    return '';
+  };
+
+  const validateAll = () => {
+    const nextErrors = {
+      email: validateEmail(email),
+      password: validatePassword(password)
+    };
+
+    setFieldErrors(nextErrors);
+    return Object.values(nextErrors).every((msg) => !msg);
+  };
+
+  const handleEmailChange = (value) => {
+    setEmail(value);
+    setFieldErrors((prev) => ({ ...prev, email: validateEmail(value) }));
+  };
+
+  const handlePasswordChange = (value) => {
+    setPassword(value);
+    setFieldErrors((prev) => ({ ...prev, password: validatePassword(value) }));
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
+
+    if (!validateAll()) {
+      return;
+    }
+
     setLoading(true);
 
     try {
@@ -53,11 +92,15 @@ const Login = () => {
                       name="email"
                       placeholder="Enter email"
                       value={email}
-                      onChange={(e) => setEmail(e.target.value)}
+                      onChange={(e) => handleEmailChange(e.target.value)}
                       required
-                      aria-describedby="email-help"
+                      maxLength={120}
+                      isInvalid={Boolean(fieldErrors.email)}
+                      aria-invalid={Boolean(fieldErrors.email)}
+                      aria-describedby={fieldErrors.email ? 'login-email-error' : 'email-help'}
                       disabled={loading}
                     />
+                    {fieldErrors.email ? <div className="auth-inline-error" id="login-email-error">{fieldErrors.email}</div> : null}
                   </Form.Group>
 
                   <Form.Group className="mb-3" controlId="login-password">
@@ -67,10 +110,14 @@ const Login = () => {
                       name="password"
                       placeholder="Password"
                       value={password}
-                      onChange={(e) => setPassword(e.target.value)}
+                      onChange={(e) => handlePasswordChange(e.target.value)}
                       required
+                      isInvalid={Boolean(fieldErrors.password)}
+                      aria-invalid={Boolean(fieldErrors.password)}
+                      aria-describedby={fieldErrors.password ? 'login-password-error' : undefined}
                       disabled={loading}
                     />
+                    {fieldErrors.password ? <div className="auth-inline-error" id="login-password-error">{fieldErrors.password}</div> : null}
                   </Form.Group>
 
                   <div className="mb-3">
@@ -93,7 +140,7 @@ const Login = () => {
                     <button
                       type="submit"
                       className="btn btn-primary"
-                      disabled={loading}
+                      disabled={loading || Object.values(fieldErrors).some(Boolean) || !email.trim() || !password}
                     >
                       {loading ? 'Signing in...' : 'Sign in'}
                     </button>

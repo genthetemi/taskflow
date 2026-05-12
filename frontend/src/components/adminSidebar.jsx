@@ -8,6 +8,9 @@ const AdminSidebar = () => {
         <NavLink to="/admin/users" className={({ isActive }) => isActive ? 'admin-link active' : 'admin-link'}>
           User & Access
         </NavLink>
+        <NavLink to="/admin/profile" className={({ isActive }) => isActive ? 'admin-link active' : 'admin-link'}>
+          My Profile
+        </NavLink>
         <NavLink to="/admin/faq" className={({ isActive }) => isActive ? 'admin-link active' : 'admin-link'}>
           FAQ Inbox
         </NavLink>

@@ -6,10 +6,12 @@ import Register from './pages/register';
 import ForgotPassword from './pages/forgotPassword';
 import Dashboard from './pages/dashboard';
 import Settings from './pages/settings';
+import UserProfile from './pages/userProfile';
 import AdminLayout from './pages/adminLayout';
 import AdminUsers from './pages/adminUsers';
 import AdminSecurity from './pages/adminSecurity';
 import AdminSettings from './pages/adminSettings';
+import AdminProfile from './pages/adminProfile';
 import AdminAudit from './pages/adminAudit';
 import AdminFaq from './pages/adminFaq';
 import Home from './pages/home';
@@ -18,6 +20,7 @@ import Features from './pages/features';
 import Faq from './pages/faq';
 import Contact from './pages/contact';
 import AdminRoute from './components/adminRoute';
+import ErrorBoundary from './components/errorBoundary';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import './App.css';
 import ShkollaPage from "./pages/ShkollaPage";
@@ -26,52 +29,63 @@ function App() {
   return (
     <Router>
       <AuthProvider>
-        <Routes>
-          {/* Public Routes */}
-          <Route path="/" element={<Home />} />
-          <Route path="/about" element={<About />} />
-          <Route path="/features" element={<Features />} />
-          <Route path="/faq" element={<Faq />} />
-          <Route path="/contact" element={<Contact />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/register" element={<Register />} />
-          <Route path="/forgot-password" element={<ForgotPassword />} />
-          <Route path="/shkolla" element={<ShkollaPage />} />
-          
-          
-          {/* Protected Routes */}
-          <Route
-            path="/dashboard"
-            element={
-              <PrivateRoute>
-                <Dashboard />
-              </PrivateRoute>
-            }
-          />
-          <Route
-            path="/settings"
-            element={
-              <PrivateRoute>
-                <Settings />
-              </PrivateRoute>
-            }
-          />
-          <Route
-            path="/admin"
-            element={
-              <AdminRoute>
-                <AdminLayout />
-              </AdminRoute>
-            }
-          >
-            <Route index element={<Navigate to="users" replace />} />
-            <Route path="users" element={<AdminUsers />} />
-            <Route path="faq" element={<AdminFaq />} />
-            <Route path="security" element={<AdminSecurity />} />
-            <Route path="settings" element={<AdminSettings />} />
-            <Route path="audit" element={<AdminAudit />} />
-          </Route>
-        </Routes>
+        <ErrorBoundary>
+          <Routes>
+            {/* Public Routes */}
+            <Route path="/" element={<Home />} />
+            <Route path="/about" element={<About />} />
+            <Route path="/features" element={<Features />} />
+            <Route path="/faq" element={<Faq />} />
+            <Route path="/contact" element={<Contact />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/register" element={<Register />} />
+            <Route path="/forgot-password" element={<ForgotPassword />} />
+            <Route path="/shkolla" element={<ShkollaPage />} />
+
+
+            {/* Protected Routes */}
+            <Route
+              path="/dashboard"
+              element={
+                <PrivateRoute>
+                  <Dashboard />
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/settings"
+              element={
+                <PrivateRoute>
+                  <Settings />
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/profile"
+              element={
+                <PrivateRoute>
+                  <UserProfile />
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/admin"
+              element={
+                <AdminRoute>
+                  <AdminLayout />
+                </AdminRoute>
+              }
+            >
+              <Route index element={<Navigate to="users" replace />} />
+              <Route path="users" element={<AdminUsers />} />
+              <Route path="faq" element={<AdminFaq />} />
+              <Route path="security" element={<AdminSecurity />} />
+              <Route path="settings" element={<AdminSettings />} />
+              <Route path="profile" element={<AdminProfile />} />
+              <Route path="audit" element={<AdminAudit />} />
+            </Route>
+          </Routes>
+        </ErrorBoundary>
       </AuthProvider>
     </Router>
   );

@@ -7,6 +7,7 @@ const AdminFaq = () => {
   const [loading, setLoading] = useState(true);
   const [drafts, setDrafts] = useState({});
   const [filter, setFilter] = useState('all');
+  const [savingById, setSavingById] = useState({});
 
   const loadQuestions = useCallback(async (status = filter) => {
     const data = await fetchFaqQuestions(status);
@@ -37,6 +38,7 @@ const AdminFaq = () => {
       status: draft.status !== undefined ? draft.status : question.status || 'open'
     };
 
+    setSavingById((prev) => ({ ...prev, [question.id]: true }));
     try {
       await updateFaqQuestion(question.id, payload);
       await loadQuestions();
@@ -44,6 +46,8 @@ const AdminFaq = () => {
     } catch (error) {
       const msg = error.response?.data?.error || 'Failed to update FAQ.';
       setMessage(msg);
+    } finally {
+      setSavingById((prev) => ({ ...prev, [question.id]: false }));
     }
   };
 
@@ -80,6 +84,7 @@ const AdminFaq = () => {
           <div className="admin-faq-list">
             {questions.map(question => {
               const draft = drafts[question.id] || {};
+              const isSaving = Boolean(savingById[question.id]);
               const answerValue = draft.answer !== undefined ? draft.answer : (question.answer || '');
               const isPublished = draft.is_published !== undefined ? draft.is_published : Boolean(question.is_published);
               const statusValue = draft.status !== undefined ? draft.status : (question.status || 'open');
@@ -113,6 +118,7 @@ const AdminFaq = () => {
                       placeholder="Enter your answer here..."
                       value={answerValue}
                       onChange={(event) => updateDraft(question.id, 'answer', event.target.value)}
+                      disabled={isSaving}
                     />
                   </div>
 
@@ -123,6 +129,7 @@ const AdminFaq = () => {
                         className="form-select admin-faq-select"
                         value={statusValue}
                         onChange={(event) => updateDraft(question.id, 'status', event.target.value)}
+                        disabled={isSaving}
                       >
                         <option value="open">Open</option>
                         <option value="answered">Answered</option>
@@ -135,13 +142,14 @@ const AdminFaq = () => {
                         className="form-select admin-faq-select"
                         value={isPublished ? 'yes' : 'no'}
                         onChange={(event) => updateDraft(question.id, 'is_published', event.target.value === 'yes')}
+                        disabled={isSaving}
                       >
                         <option value="no">Draft</option>
                         <option value="yes">Published</option>
                       </select>
                     </div>
-                    <button className="btn btn-sm btn-dark" onClick={() => handleSave(question)}>
-                      Save
+                    <button className="btn btn-sm btn-dark" onClick={() => handleSave(question)} disabled={isSaving}>
+                      {isSaving ? 'Saving...' : 'Save'}
                     </button>
                   </div>
                 </div>

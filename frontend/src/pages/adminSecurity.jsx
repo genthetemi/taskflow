@@ -8,6 +8,9 @@ const AdminSecurity = () => {
   const [ipRules, setIpRules] = useState([]);
   const [newRule, setNewRule] = useState({ ip: '', type: 'allow', description: '' });
   const [message, setMessage] = useState('');
+  const [isSavingSettings, setIsSavingSettings] = useState(false);
+  const [isAddingRule, setIsAddingRule] = useState(false);
+  const [removingRuleId, setRemovingRuleId] = useState(null);
 
   const loadData = async () => {
     const [settingsData, rulesData] = await Promise.all([
@@ -27,23 +30,49 @@ const AdminSecurity = () => {
   }, []);
 
   const handleSave = async () => {
-    const updated = await updateAdminSettings({ security: settings.security });
-    setSettings(prev => ({ ...prev, ...updated }));
-    setMessage('Security settings updated.');
+    setIsSavingSettings(true);
+    setMessage('');
+    try {
+      const updated = await updateAdminSettings({ security: settings.security });
+      setSettings(prev => ({ ...prev, ...updated }));
+      setMessage('Security settings updated.');
+    } catch (error) {
+      setMessage(error.response?.data?.error || 'Failed to save security settings.');
+    } finally {
+      setIsSavingSettings(false);
+    }
   };
 
   const handleAddIpRule = async (event) => {
     event.preventDefault();
     if (!newRule.ip.trim()) return;
-    await addIpRule(newRule);
-    setNewRule({ ip: '', type: 'allow', description: '' });
-    const rules = await fetchIpRules();
-    setIpRules(rules);
+    setIsAddingRule(true);
+    setMessage('');
+    try {
+      await addIpRule(newRule);
+      setNewRule({ ip: '', type: 'allow', description: '' });
+      const rules = await fetchIpRules();
+      setIpRules(rules);
+      setMessage('IP rule added.');
+    } catch (error) {
+      setMessage(error.response?.data?.error || 'Failed to add IP rule.');
+    } finally {
+      setIsAddingRule(false);
+    }
   };
 
   const handleRemoveIpRule = async (id) => {
-    await deleteIpRule(id);
-    setIpRules(prev => prev.filter(rule => rule.id !== id));
+    setRemovingRuleId(id);
+    setMessage('');
+    try {
+      await deleteIpRule(id);
+      setIpRules(prev => prev.filter(rule => rule.id !== id));
+      setMessage('IP rule removed.');
+    } catch (error) {
+      setMessage(error.response?.data?.error || 'Failed to remove IP rule.');
+    } finally {
+      setRemovingRuleId(null);
+    }
   };
 
   return (
@@ -66,6 +95,7 @@ const AdminSecurity = () => {
                 ...settings,
                 security: { ...settings.security, lockAfterFailed: Number(event.target.value) }
               })}
+              disabled={isSavingSettings}
             />
           </div>
 
@@ -79,10 +109,11 @@ const AdminSecurity = () => {
                 ...settings,
                 security: { ...settings.security, lockMinutes: Number(event.target.value) }
               })}
+              disabled={isSavingSettings}
             />
           </div>
-          <button className="btn btn-dark admin-save" onClick={handleSave}>
-            Save Security Settings
+          <button className="btn btn-dark admin-save" onClick={handleSave} disabled={isSavingSettings}>
+            {isSavingSettings ? 'Saving...' : 'Save Security Settings'}
           </button>
         </div>
 
@@ -94,10 +125,12 @@ const AdminSecurity = () => {
               placeholder="IP address"
               value={newRule.ip}
               onChange={(event) => setNewRule({ ...newRule, ip: event.target.value })}
+              disabled={isAddingRule}
             />
             <select
               value={newRule.type}
               onChange={(event) => setNewRule({ ...newRule, type: event.target.value })}
+              disabled={isAddingRule}
             >
               <option value="allow">Allow</option>
               <option value="deny">Deny</option>
@@ -107,8 +140,11 @@ const AdminSecurity = () => {
               placeholder="Description"
               value={newRule.description}
               onChange={(event) => setNewRule({ ...newRule, description: event.target.value })}
+              disabled={isAddingRule}
             />
-            <button className="btn btn-sm btn-dark" type="submit">Add</button>
+            <button className="btn btn-sm btn-dark" type="submit" disabled={isAddingRule || !newRule.ip.trim()}>
+              {isAddingRule ? 'Adding...' : 'Add'}
+            </button>
           </form>
           <ul className="admin-rule-list">
             {ipRules.map(rule => (
@@ -117,8 +153,9 @@ const AdminSecurity = () => {
                 <button
                   className="btn btn-sm btn-outline-dark"
                   onClick={() => handleRemoveIpRule(rule.id)}
+                  disabled={removingRuleId === rule.id}
                 >
-                  Remove
+                  {removingRuleId === rule.id ? 'Removing...' : 'Remove'}
                 </button>
               </li>
             ))}

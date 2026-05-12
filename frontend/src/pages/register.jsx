@@ -15,6 +15,26 @@ const Register = () => {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
+  const getPasswordStrength = (value) => {
+    const passwordValue = String(value || '');
+    if (!passwordValue) {
+      return { label: 'Enter a password', score: 0, className: 'is-empty' };
+    }
+
+    let score = 0;
+    if (passwordValue.length >= 8) score += 1;
+    if (/[A-Z]/.test(passwordValue)) score += 1;
+    if (/[0-9]/.test(passwordValue)) score += 1;
+    if (/[^A-Za-z0-9]/.test(passwordValue)) score += 1;
+
+    if (score <= 1) return { label: 'Weak', score, className: 'is-weak' };
+    if (score <= 2) return { label: 'Fair', score, className: 'is-fair' };
+    if (score === 3) return { label: 'Good', score, className: 'is-good' };
+    return { label: 'Strong', score, className: 'is-strong' };
+  };
+
+  const passwordStrength = getPasswordStrength(password);
+
   const validate = () => {
     if (!firstName.trim() || !lastName.trim()) {
       setError('Please provide your first and last name.');
@@ -121,9 +141,16 @@ const Register = () => {
                           value={password}
                           onChange={(e) => setPassword(e.target.value)}
                           required
+                          isInvalid={Boolean(password) && password.length < 8}
                           disabled={loading}
                         />
-                        <div className="password-hint small mt-2 text-muted">Password must be 8+ characters.</div>
+                        <div className={`password-strength small mt-2 ${passwordStrength.className}`} aria-live="polite">
+                          Strength: {passwordStrength.label}
+                        </div>
+                        <div className="password-strength-bar" aria-hidden="true">
+                          <span className={`password-strength-fill ${passwordStrength.className}`} style={{ width: `${Math.min(passwordStrength.score, 4) * 25}%` }}></span>
+                        </div>
+                        <div className="password-hint small mt-2 text-muted">Use 8+ chars with uppercase, number, and symbol.</div>
                       </Form.Group>
                     </div>
                     <div className="col-12 col-md-6">
@@ -136,6 +163,7 @@ const Register = () => {
                           value={confirmPassword}
                           onChange={(e) => setConfirmPassword(e.target.value)}
                           required
+                          isInvalid={Boolean(confirmPassword) && password !== confirmPassword}
                           disabled={loading}
                         />
                         <div className="password-match small mt-2" aria-live="polite">

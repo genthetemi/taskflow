@@ -1,13 +1,16 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '../context/authContext';
 import { Container, Card, Alert, Modal, Form, Button } from 'react-bootstrap';
+import { io } from 'socket.io-client';
 import Navbar from '../components/navbar';
 import TaskList from '../components/taskList';
 import Sidebar from '../components/sidebar';
 import StatsCard from '../components/statsCard';
 import TaskDetailModal from '../components/taskDetailModal';
+import BoardChat from '../components/boardChat';
 import { fetchTasks, createTask, updateTask, deleteTask, fetchTaskComments, createTaskComment } from '../services/tasks';
+import { fetchBoardChatMessages, createBoardChatMessage } from '../services/chat';
 import {
   fetchBoards,
   createBoard,
@@ -19,6 +22,8 @@ import {
   respondToBoardInvitation
 } from '../services/boards';
 import '../styles/dashboard.css';
+
+const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
 
 const Dashboard = () => {
   const { user } = useAuth();
@@ -61,6 +66,13 @@ const Dashboard = () => {
   const [inviteEmail, setInviteEmail] = useState('');
   const [isInviting, setIsInviting] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [chatMessages, setChatMessages] = useState([]);
+  const [chatDraft, setChatDraft] = useState('');
+  const [isChatLoading, setIsChatLoading] = useState(false);
+  const [isSendingChat, setIsSendingChat] = useState(false);
+  const [chatError, setChatError] = useState('');
+  const [isChatOpen, setIsChatOpen] = useState(false);
+  const socketRef = useRef(null);
 
   const normalizeStatus = (status) =>
     String(status || 'pending').trim().toLowerCase().replace(/\s+/g, '-');
@@ -139,6 +151,20 @@ const Dashboard = () => {
     }
   };
 
+  const loadBoardChatMessages = useCallback(async (boardId) => {
+    try {
+      setIsChatLoading(true);
+      setChatError('');
+      const data = await fetchBoardChatMessages(boardId);
+      setChatMessages(data || []);
+    } catch (err) {
+      setChatError(getErrorMessage(err, 'Failed to load board chat'));
+      setChatMessages([]);
+    } finally {
+      setIsChatLoading(false);
+    }
+  }, []);
+
   const loadInvitations = async () => {
     try {
       setIsInvitesLoading(true);
@@ -183,6 +209,69 @@ const Dashboard = () => {
     const intervalId = setInterval(loadInvitations, 20000);
     return () => clearInterval(intervalId);
   }, []);
+
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      return undefined;
+    }
+
+    const socket = io(API_URL, {
+      auth: { token }
+    });
+
+    socket.on('board_message', (newMessage) => {
+      if (!activeBoard?.id || Number(newMessage.boardId) !== Number(activeBoard.id)) {
+        return;
+      }
+
+      setChatMessages((prev) => [...prev, newMessage].slice(-100));
+    });
+
+    socket.on('connect', () => {
+      if (activeBoard?.id) {
+        socket.emit('join_board', { boardId: activeBoard.id });
+      }
+    });
+
+    socket.on('chat_error', (payload = {}) => {
+      setChatError(payload.message || 'Chat error');
+    });
+
+    socket.on('connect_error', () => {
+      setChatError('Realtime chat unavailable. Fallback send is enabled.');
+    });
+
+    socketRef.current = socket;
+
+    return () => {
+      socket.removeAllListeners();
+      socket.disconnect();
+      socketRef.current = null;
+    };
+  }, [activeBoard?.id]);
+
+  useEffect(() => {
+    if (!activeBoard?.id) {
+      setChatMessages([]);
+      setIsChatOpen(false);
+      return undefined;
+    }
+
+    const boardId = activeBoard.id;
+    loadBoardChatMessages(boardId);
+    setChatError('');
+
+    if (socketRef.current?.connected) {
+      socketRef.current.emit('join_board', { boardId });
+    }
+
+    return () => {
+      if (socketRef.current?.connected) {
+        socketRef.current.emit('leave_board', { boardId });
+      }
+    };
+  }, [activeBoard?.id, loadBoardChatMessages]);
 
   // Load board users when board changes
   useEffect(() => {
@@ -431,6 +520,36 @@ const Dashboard = () => {
     }
   };
 
+  const handleSendBoardMessage = async (event) => {
+    event.preventDefault();
+
+    const content = chatDraft.trim();
+    if (!content || !activeBoard?.id) {
+      return;
+    }
+
+    try {
+      setIsSendingChat(true);
+      setChatError('');
+
+      if (socketRef.current?.connected) {
+        socketRef.current.emit('send_board_message', {
+          boardId: activeBoard.id,
+          message: content
+        });
+      } else {
+        const createdMessage = await createBoardChatMessage(activeBoard.id, content);
+        setChatMessages((prev) => [...prev, createdMessage].slice(-100));
+      }
+
+      setChatDraft('');
+    } catch (err) {
+      setChatError(getErrorMessage(err, 'Failed to send message'));
+    } finally {
+      setIsSendingChat(false);
+    }
+  };
+
   const visibleTasks = getVisibleTasks();
   const overdueCount = visibleTasks.filter((task) => task.due_date && new Date(task.due_date) < new Date()).length;
   const assignedToMeCount = visibleTasks.filter((task) => Number(task.assignee_user_id) === Number(user?.id)).length;
@@ -595,6 +714,7 @@ const Dashboard = () => {
                   />
                 </Card.Body>
               </Card>
+
             </>
           ) : (
             <div className="board-prompt">
@@ -863,6 +983,19 @@ const Dashboard = () => {
             }}
             onCommentChange={setTaskCommentDraft}
             onSubmitComment={handleSubmitTaskComment}
+          />
+
+          <BoardChat
+            isActiveBoard={Boolean(activeBoard?.id)}
+            isOpen={isChatOpen}
+            messages={chatMessages}
+            draft={chatDraft}
+            loading={isChatLoading}
+            sending={isSendingChat}
+            error={chatError}
+            onToggle={() => setIsChatOpen((prev) => !prev)}
+            onDraftChange={setChatDraft}
+            onSendMessage={handleSendBoardMessage}
           />
         </Container>
       </div>
