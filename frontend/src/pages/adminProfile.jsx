@@ -76,7 +76,7 @@ const AdminProfile = () => {
         avatar: prev.avatar || user?.avatar || ''
       }));
     }
-  }, [user?.email, user?.firstName, user?.lastName]);
+  }, [user?.email, user?.firstName, user?.lastName, user?.avatar]);
 
   const handleProfileChange = (field, value) => {
     setProfile((prev) => ({ ...prev, [field]: value }));
