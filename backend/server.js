@@ -1,5 +1,7 @@
 const express = require('express');
 const cors = require('cors');
+const http = require('http');
+const { Server } = require('socket.io');
 const mysql = require('mysql2/promise'); // Use promise-based MySQL
 require('dotenv').config(); // Load environment variables
 const taskRoutes = require('./src/routes/taskRoutes'); // Ensure this path is correct
@@ -13,8 +15,17 @@ const swaggerSpec = require('./swagger-config');
 const { setupDatabase } = require('./src/utils/dbSetup');
 const shkollaRoutes = require("./src/routes/shkolla.routes");
 const { connectMongo } = require('./src/config/mongo');
+const chatRoutes = require('./src/routes/chatRoutes');
+const setupChatSocket = require('./src/socket/chatSocket');
 
 const app = express();
+const server = http.createServer(app);
+const io = new Server(server, {
+    cors: {
+        origin: 'http://localhost:3000',
+        methods: ['GET', 'POST']
+    }
+});
 
 // CORS Middleware (Allows requests from frontend)
 app.use(cors({
@@ -30,6 +41,7 @@ app.use('/api/admin', adminRoutes);
 app.use('/api/faq', faqRoutes);
 app.use('/api/contact', contactRoutes);
 app.use("/api/shkolla", shkollaRoutes);
+app.use('/api/chat', chatRoutes);
 
 // Documentation endpoint
 app.use('/api-docs', 
@@ -91,11 +103,12 @@ const PORT = process.env.PORT || 5000;
 
     try {
         await connectMongo();
+        setupChatSocket(io);
     } catch (error) {
         console.error('MongoDB connection failed:', error.message);
     }
 
-    app.listen(PORT, () => {
+    server.listen(PORT, () => {
         console.log(`Server running on http://localhost:${PORT}`);
     });
 })();

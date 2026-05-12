@@ -16,6 +16,8 @@ const Navbar = ({
 
   const toggle = () => setOpen(!open);
   const getNavLinkClass = ({ isActive }) => `nav-link ${isActive ? 'active-link' : ''}`;
+  const profileRoute = user?.role === 'admin' ? '/admin/profile' : '/profile';
+  const userInitials = `${user?.firstName?.[0] || ''}${user?.lastName?.[0] || ''}`.toUpperCase() || 'U';
 
   return (
     <nav className="navbar navbar-expand-lg navbar-light fixed-top">
@@ -73,6 +75,11 @@ const Navbar = ({
                 <NavLink className={getNavLinkClass} to="/dashboard" onClick={() => setOpen(false)}>DASHBOARD</NavLink>
               </li>
             )}
+            {user?.role !== 'admin' && (
+              <li className="nav-item">
+                <NavLink className={getNavLinkClass} to="/profile" onClick={() => setOpen(false)}>PROFILE</NavLink>
+              </li>
+            )}
             {user?.role === 'admin' && (
               <li className="nav-item">
                 <NavLink className={getNavLinkClass} to="/admin" onClick={() => setOpen(false)}>ADMIN</NavLink>
@@ -83,6 +90,19 @@ const Navbar = ({
           <div className="d-flex">
             {user ? (
               <>
+                <Link className="navbar-user-link me-3" to={profileRoute} onClick={() => setOpen(false)}>
+                  <span className="navbar-user-avatar">
+                    {user?.avatar ? (
+                      <img src={user.avatar} alt={`${user.firstName || 'User'} profile`} className="navbar-user-avatar-image" />
+                    ) : (
+                      userInitials
+                    )}
+                  </span>
+                  <span className="navbar-user-meta">
+                    <strong>{user?.firstName || 'User'}</strong>
+                    <small>{user?.role || 'user'}</small>
+                  </span>
+                </Link>
                 {
                   <button
                     className={`me-2 navbar-notifications-btn ${showNotificationsDropdown ? 'is-open' : ''}`}

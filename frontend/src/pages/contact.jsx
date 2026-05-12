@@ -23,6 +23,48 @@ const Contact = () => {
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [fieldErrors, setFieldErrors] = useState({});
+
+  const validators = {
+    name: (value) => {
+      const cleanValue = String(value || '').trim();
+      if (!cleanValue) return 'Name is required.';
+      if (cleanValue.length < 2) return 'Name must be at least 2 characters.';
+      return '';
+    },
+    email: (value) => {
+      const cleanValue = String(value || '').trim();
+      if (!cleanValue) return 'Email is required.';
+      if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(cleanValue)) return 'Enter a valid email address.';
+      return '';
+    },
+    subject: (value) => {
+      const cleanValue = String(value || '').trim();
+      if (!cleanValue) return 'Subject is required.';
+      if (cleanValue.length < 3) return 'Subject must be at least 3 characters.';
+      return '';
+    },
+    message: (value) => {
+      const cleanValue = String(value || '').trim();
+      if (!cleanValue) return 'Message is required.';
+      if (cleanValue.length < 10) return 'Message must be at least 10 characters.';
+      return '';
+    }
+  };
+
+  const validateField = (name, value) => validators[name]?.(value) || '';
+
+  const validateAll = () => {
+    const nextErrors = {
+      name: validateField('name', formData.name),
+      email: validateField('email', formData.email),
+      subject: validateField('subject', formData.subject),
+      message: validateField('message', formData.message)
+    };
+
+    setFieldErrors(nextErrors);
+    return Object.values(nextErrors).every((msg) => !msg);
+  };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -30,10 +72,19 @@ const Contact = () => {
       ...prev,
       [name]: value
     }));
+
+    setFieldErrors((prev) => ({
+      ...prev,
+      [name]: validateField(name, value)
+    }));
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!validateAll()) {
+      return;
+    }
+
     setLoading(true);
     setError(null);
 
@@ -146,8 +197,13 @@ const Contact = () => {
                   value={formData.name}
                   onChange={handleChange}
                   placeholder="Your name"
+                  minLength={2}
+                  maxLength={80}
+                  aria-invalid={Boolean(fieldErrors.name)}
+                  aria-describedby={fieldErrors.name ? 'name-error' : undefined}
                   required
                 />
+                {fieldErrors.name ? <p className="inline-field-error" id="name-error">{fieldErrors.name}</p> : null}
               </div>
 
               <div className="form-group">
@@ -159,8 +215,12 @@ const Contact = () => {
                   value={formData.email}
                   onChange={handleChange}
                   placeholder="your@email.com"
+                  maxLength={120}
+                  aria-invalid={Boolean(fieldErrors.email)}
+                  aria-describedby={fieldErrors.email ? 'email-error' : undefined}
                   required
                 />
+                {fieldErrors.email ? <p className="inline-field-error" id="email-error">{fieldErrors.email}</p> : null}
               </div>
 
               <div className="form-group">
@@ -172,8 +232,13 @@ const Contact = () => {
                   value={formData.subject}
                   onChange={handleChange}
                   placeholder="What is this about?"
+                  minLength={3}
+                  maxLength={120}
+                  aria-invalid={Boolean(fieldErrors.subject)}
+                  aria-describedby={fieldErrors.subject ? 'subject-error' : undefined}
                   required
                 />
+                {fieldErrors.subject ? <p className="inline-field-error" id="subject-error">{fieldErrors.subject}</p> : null}
               </div>
 
               <div className="form-group">
@@ -185,11 +250,27 @@ const Contact = () => {
                   onChange={handleChange}
                   placeholder="Tell us what's on your mind..."
                   rows="6"
+                  minLength={10}
+                  maxLength={2000}
+                  aria-invalid={Boolean(fieldErrors.message)}
+                  aria-describedby={fieldErrors.message ? 'message-error' : undefined}
                   required
                 ></textarea>
+                {fieldErrors.message ? <p className="inline-field-error" id="message-error">{fieldErrors.message}</p> : null}
               </div>
 
-              <button type="submit" className="submit-btn" disabled={loading}>
+              <button
+                type="submit"
+                className="submit-btn"
+                disabled={
+                  loading ||
+                  Object.values(fieldErrors).some(Boolean) ||
+                  !formData.name.trim() ||
+                  !formData.email.trim() ||
+                  !formData.subject.trim() ||
+                  !formData.message.trim()
+                }
+              >
                 <FiSend className="btn-icon" />
                 {loading ? 'SENDING...' : 'SEND MESSAGE'}
               </button>
